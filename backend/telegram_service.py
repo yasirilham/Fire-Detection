@@ -8,7 +8,7 @@ load_dotenv()
 
 BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
-COOLDOWN = int(os.getenv("TELEGRAM_COOLDOWN", "30"))
+COOLDOWN = 30  # Pengiriman Telegram setiap 30 detik sekali
 print("[DEBUG] BOT_TOKEN =", BOT_TOKEN)
 print("[DEBUG] CHAT_ID =", CHAT_ID)
 

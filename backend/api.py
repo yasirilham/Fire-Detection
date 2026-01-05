@@ -48,22 +48,22 @@ logger = logging.getLogger("FireDetection")
 # ============================================================
 # A1. THRESHOLD CONFIDENCE (TUNED)
 # ============================================================
-# 🔥 Fire: threshold lebih rendah untuk deteksi dini
+# 🔥 Fire: threshold lebih tinggi untuk mengurangi false positive
 # 💨 Smoke: threshold lebih tinggi untuk mengurangi false positive
-CONF_FIRE  = 0.50   # 🔥 api prioritas utama, threshold lebih toleran
-CONF_SMOKE = 0.60   # 💨 asap butuh keyakinan lebih tinggi
+CONF_FIRE  = 0.65   # 🔥 api butuh keyakinan lebih tinggi
+CONF_SMOKE = 0.70   # 💨 asap butuh keyakinan lebih tinggi
 
 # ============================================================
 # A2. MINIMAL BOUNDING BOX AREA (ANTI NOISE)
 # ============================================================
-MIN_BOX_AREA_FIRE  = 2000   # Fire bisa lebih kecil di awal
-MIN_BOX_AREA_SMOKE = 3500   # Smoke harus lebih besar (anti noise)
+MIN_BOX_AREA_FIRE  = 3000   # Fire minimal area lebih besar
+MIN_BOX_AREA_SMOKE = 4500   # Smoke harus lebih besar (anti noise)
 
 # ============================================================
 # A3. STABILISASI TEMPORAL (FRAME STABILIZER)
 # ============================================================
-FIRE_FRAME_THRESHOLD  = 2   # Fire: lebih responsif (2 frame)
-SMOKE_FRAME_THRESHOLD = 4   # Smoke: lebih ketat (4 frame)
+FIRE_FRAME_THRESHOLD  = 4   # Fire: butuh 4 frame konsekutif
+SMOKE_FRAME_THRESHOLD = 6   # Smoke: butuh 6 frame konsekutif
 
 # Frame counters terpisah per kelas
 _fire_frame_count = 0

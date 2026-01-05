@@ -26,10 +26,50 @@ function DashboardApp() {
   const [lastConfidence, setLastConfidence] = React.useState(0);
   const [totalDetections, setTotalDetections] = React.useState(0);
   const [alerts, setAlerts] = React.useState([]);
+  const [alarmPlaying, setAlarmPlaying] = React.useState(false);
 
   const videoRef = React.useRef(null);
   const streamRef = React.useRef(null);
   const detectionAPIRef = React.useRef(null);
+  const alarmAudioRef = React.useRef(null);
+  const alarmIntervalRef = React.useRef(null);
+  const lastAlarmTimeRef = React.useRef(0);
+
+  // Konstanta untuk interval alarm (15 detik)
+  const ALARM_INTERVAL = 15000; // 15 detik dalam milliseconds
+
+  // ===============================
+  // ALARM FUNCTIONS
+  // ===============================
+  const playAlarmOnce = () => {
+    if (alarmAudioRef.current) {
+      alarmAudioRef.current.currentTime = 0;
+      alarmAudioRef.current.loop = false; // Tidak loop
+      alarmAudioRef.current.play()
+        .catch(err => console.error("Error playing alarm:", err));
+    }
+  };
+
+  const playAlarm = () => {
+    const now = Date.now();
+    
+    // Cek apakah sudah 15 detik sejak alarm terakhir
+    if (now - lastAlarmTimeRef.current >= ALARM_INTERVAL) {
+      lastAlarmTimeRef.current = now;
+      playAlarmOnce();
+      setAlarmPlaying(true);
+      console.log("🔊 Alarm berbunyi!");
+    }
+  };
+
+  const stopAlarm = () => {
+    if (alarmAudioRef.current) {
+      alarmAudioRef.current.pause();
+      alarmAudioRef.current.currentTime = 0;
+    }
+    lastAlarmTimeRef.current = 0; // Reset timer
+    setAlarmPlaying(false);
+  };
 
   // ===============================
   // AUTH INIT (PENTING)
@@ -121,6 +161,9 @@ function DashboardApp() {
       detectionAPIRef.current = null;
     }
 
+    // Stop alarm ketika deteksi dihentikan
+    stopAlarm();
+
     setDetectionActive(false);
     setApiStatus("Siap");
   };
@@ -140,6 +183,9 @@ function DashboardApp() {
       setFireDetected(true);
       setTotalDetections(prev => prev + 1);
 
+      // 🔊 PLAY ALARM saat kebakaran terdeteksi
+      playAlarm();
+
       // Tentukan emoji dan label berdasarkan jenis deteksi
       const emoji = result.detected_class === "Fire" ? "🔥" : "💨";
       const label = result.detected_class === "Fire" ? "API" : "ASAP";
@@ -154,6 +200,8 @@ function DashboardApp() {
       ].slice(0, 5));
     } else {
       setFireDetected(false);
+      // Opsional: hentikan alarm otomatis saat tidak ada api
+      // stopAlarm();
     }
   };
 
@@ -167,6 +215,9 @@ function DashboardApp() {
   // ===============================
   return (
     <div className="min-h-screen bg-gray-900 text-white">
+      {/* Hidden Audio Element untuk Alarm */}
+      <audio ref={alarmAudioRef} src="components/alarm.mp3" preload="auto" />
+      
       <nav className="bg-gray-800 p-4 flex justify-between">
         <b>🔥 Fire Detection</b>
         <button onClick={logout} className="bg-red-600 px-4 py-1 rounded">
@@ -209,6 +260,19 @@ function DashboardApp() {
           </b></p>
           <p>Confidence: <b>{lastConfidence > 0 ? `${(lastConfidence * 100).toFixed(0)}%` : "-"}</b></p>
           <p>Total Deteksi: <b>{totalDetections}</b></p>
+          <p>Alarm: <b className={alarmPlaying ? "text-yellow-500" : "text-gray-500"}>
+            {alarmPlaying ? "🔔 Aktif (15 detik)" : "🔕 Mati"}
+          </b></p>
+
+          {/* Tombol Stop Alarm */}
+          {alarmPlaying && (
+            <button 
+              onClick={stopAlarm}
+              className="w-full mt-3 bg-yellow-600 hover:bg-yellow-700 px-4 py-2 rounded font-bold animate-pulse"
+            >
+              🔕 Matikan Alarm
+            </button>
+          )}
 
           <hr className="my-2 border-gray-600" />
 
