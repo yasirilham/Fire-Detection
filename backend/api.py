@@ -54,6 +54,13 @@ CONF_FIRE  = 0.65   # 🔥 api butuh keyakinan lebih tinggi
 CONF_SMOKE = 0.70   # 💨 asap butuh keyakinan lebih tinggi
 
 # ============================================================
+# A1.1 THRESHOLD UNTUK ALARM & NOTIFIKASI TELEGRAM
+# ============================================================
+# Hanya kirim notifikasi jika confidence >= threshold ini
+NOTIFY_THRESHOLD_FIRE  = 0.70   # Fire >= 70% untuk notifikasi
+NOTIFY_THRESHOLD_SMOKE = 0.60   # Smoke >= 60% untuk notifikasi
+
+# ============================================================
 # A2. MINIMAL BOUNDING BOX AREA (ANTI NOISE)
 # ============================================================
 MIN_BOX_AREA_FIRE  = 3000   # Fire minimal area lebih besar
@@ -326,6 +333,9 @@ async def detect(file: UploadFile = File(...)):
     # --------------------------------------------------------
     # 8. CONFIRMED DETECTION → ACTION
     # --------------------------------------------------------
+    # Flag untuk menentukan apakah perlu kirim notifikasi
+    should_notify = False
+    
     if fire_detected:
         total_detect += 1
 
@@ -340,15 +350,30 @@ async def detect(file: UploadFile = File(...)):
         if len(_detection_history) > MAX_HISTORY:
             _detection_history.pop(0)
 
-        logger.warning(
-            f"🚨 KEBAKARAN CONFIRMED | Jenis={detected_class} | "
-            f"User={active_user['name']} | Conf={max_conf:.2f}"
-        )
+        # Cek apakah confidence cukup untuk notifikasi
+        if detected_class == "Fire" and max_conf >= NOTIFY_THRESHOLD_FIRE:
+            should_notify = True
+            logger.warning(
+                f"🚨 KEBAKARAN CONFIRMED (HIGH) | Jenis={detected_class} | "
+                f"User={active_user['name']} | Conf={max_conf:.2f} | NOTIFIKASI AKTIF"
+            )
+        elif detected_class == "Smoke" and max_conf >= NOTIFY_THRESHOLD_SMOKE:
+            should_notify = True
+            logger.warning(
+                f"🚨 KEBAKARAN CONFIRMED (HIGH) | Jenis={detected_class} | "
+                f"User={active_user['name']} | Conf={max_conf:.2f} | NOTIFIKASI AKTIF"
+            )
+        else:
+            # Deteksi tapi confidence rendah - tidak kirim notifikasi
+            logger.info(
+                f"⚠️ DETEKSI (LOW CONFIDENCE) | Jenis={detected_class} | "
+                f"User={active_user['name']} | Conf={max_conf:.2f} | TANPA NOTIFIKASI"
+            )
 
         # ----------------------------------------------------
-        # 9. TELEGRAM ALERT
+        # 9. TELEGRAM ALERT (HANYA JIKA HIGH CONFIDENCE)
         # ----------------------------------------------------
-        if can_send():
+        if should_notify and can_send():
             timestamp = int(time.time())
             filename = f"{SCREENSHOT_DIR}/fire_{timestamp}.jpg"
             cv2.imwrite(filename, frame_original)
@@ -369,12 +394,13 @@ async def detect(file: UploadFile = File(...)):
             logger.info(f"📤 Telegram alert sent | {filename}")
 
     # --------------------------------------------------------
-    # 10. RESPONSE KE FRONTEND (seragam KEBAKARAN)
+    # 10. RESPONSE KE FRONTEND
     # --------------------------------------------------------
     return {
         "fire": fire_detected,
         "confidence": max_conf,
-        "detected_class": detected_class,  # Detail untuk logging
+        "detected_class": detected_class,
+        "should_notify": should_notify,  # Info ke frontend apakah high confidence
         "time": time.strftime("%H:%M:%S"),
         "user": active_user
     }

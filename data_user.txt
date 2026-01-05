@@ -1,4 +1,0 @@
-admin|admin123|Jl. Contoh No. 123, Jakarta|2025-12-10T03:54:00.000Z
-testuser|test123|Jl. Testing No. 456, Bandung|2025-12-10T03:54:00.000Z
-arsyi|123456|gang ini nanti kesana, dan kesini dan kesana|2025-12-10T04:07:45.398Z
-ar|123456|disini loh|2025-12-18T13:22:51.878Z

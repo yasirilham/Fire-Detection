@@ -7,30 +7,14 @@
     <meta name="description" content="Daftar akun baru untuk sistem deteksi api">
     <meta name="keywords" content="fire detection, registrasi, daftar akun">
     
-    <script src="https://resource.trickle.so/vendor_lib/unpkg/react@18/umd/react.production.min.js"></script>
-    <script src="https://resource.trickle.so/vendor_lib/unpkg/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://resource.trickle.so/vendor_lib/unpkg/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://resource.trickle.so/vendor_lib/unpkg/lucide-static@0.516.0/font/lucide.css" rel="stylesheet">
+    <link href="https://unpkg.com/lucide-static@0.516.0/font/lucide.css" rel="stylesheet">
+    <link href="styles/main.css" rel="stylesheet">
 
     <style type="text/tailwindcss">
-    @layer theme {
-        :root {
-            --primary-color: #dc2626;
-            --secondary-color: #fef2f2;
-            --accent-color: #991b1b;
-            --text-primary: #1f2937;
-            --text-secondary: #6b7280;
-        }
-    }
-
-    @layer base {
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            color: var(--text-primary);
-        }
-    }
-
     @layer components {
         .btn-primary {
             @apply bg-[var(--primary-color)] text-white px-6 py-3 rounded-lg font-medium hover:bg-[var(--accent-color)] transition-colors duration-200;
@@ -44,6 +28,7 @@
 </head>
 <body>
     <div id="root"></div>
+    <script type="text/babel" src="function/ErrorBoundary.js"></script>
     <script type="text/babel" src="components/RegisterForm.js"></script>
     <script type="text/babel" src="components/Alert.js"></script>
     <script type="text/babel" src="utils/auth.js"></script>

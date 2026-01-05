@@ -1,6 +1,13 @@
 // dashboard-app.js
 const BACKEND_URL = "http://127.0.0.1:8000";
 
+// ===============================
+// THRESHOLD UNTUK ALARM & NOTIFIKASI
+// ===============================
+const ALARM_THRESHOLD_FIRE = 0.70;   // Fire harus >= 70% untuk alarm
+const ALARM_THRESHOLD_SMOKE = 0.60;  // Smoke harus >= 60% untuk alarm
+const ALARM_INTERVAL = 30000;        // Alarm berbunyi setiap 30 detik
+
 async function sendControl(action, userId) {
   console.log("[CONTROL] sending:", action, "user_id:", userId);
 
@@ -22,7 +29,7 @@ function DashboardApp() {
   const [detectionActive, setDetectionActive] = React.useState(false);
   const [apiStatus, setApiStatus] = React.useState("Siap");
   const [fireDetected, setFireDetected] = React.useState(false);
-  const [detectedClass, setDetectedClass] = React.useState(null);  // "Fire" | "Smoke" | null
+  const [detectedClass, setDetectedClass] = React.useState(null);
   const [lastConfidence, setLastConfidence] = React.useState(0);
   const [totalDetections, setTotalDetections] = React.useState(0);
   const [alerts, setAlerts] = React.useState([]);
@@ -32,11 +39,7 @@ function DashboardApp() {
   const streamRef = React.useRef(null);
   const detectionAPIRef = React.useRef(null);
   const alarmAudioRef = React.useRef(null);
-  const alarmIntervalRef = React.useRef(null);
   const lastAlarmTimeRef = React.useRef(0);
-
-  // Konstanta untuk interval alarm (15 detik)
-  const ALARM_INTERVAL = 15000; // 15 detik dalam milliseconds
 
   // ===============================
   // ALARM FUNCTIONS
@@ -44,7 +47,7 @@ function DashboardApp() {
   const playAlarmOnce = () => {
     if (alarmAudioRef.current) {
       alarmAudioRef.current.currentTime = 0;
-      alarmAudioRef.current.loop = false; // Tidak loop
+      alarmAudioRef.current.loop = false;
       alarmAudioRef.current.play()
         .catch(err => console.error("Error playing alarm:", err));
     }
@@ -53,7 +56,7 @@ function DashboardApp() {
   const playAlarm = () => {
     const now = Date.now();
     
-    // Cek apakah sudah 15 detik sejak alarm terakhir
+    // Cek apakah sudah 30 detik sejak alarm terakhir
     if (now - lastAlarmTimeRef.current >= ALARM_INTERVAL) {
       lastAlarmTimeRef.current = now;
       playAlarmOnce();
@@ -67,7 +70,7 @@ function DashboardApp() {
       alarmAudioRef.current.pause();
       alarmAudioRef.current.currentTime = 0;
     }
-    lastAlarmTimeRef.current = 0; // Reset timer
+    lastAlarmTimeRef.current = 0;
     setAlarmPlaying(false);
   };
 
@@ -174,34 +177,42 @@ function DashboardApp() {
   const handleDetectionResult = (result) => {
     console.log("DETECTION RESULT:", result);
 
-    // Update detected class untuk display (bisa Fire, Smoke, atau null)
+    // Update state untuk display
     setDetectedClass(result.detected_class);
     setLastConfidence(result.confidence || 0);
 
     if (result.fire === true) {
-      // KEBAKARAN CONFIRMED (sudah melewati stabilization)
+      // Api/Asap terdeteksi (sudah melewati stabilization)
       setFireDetected(true);
       setTotalDetections(prev => prev + 1);
 
-      // 🔊 PLAY ALARM saat kebakaran terdeteksi
-      playAlarm();
+      // Cek apakah confidence cukup tinggi untuk alarm & notifikasi
+      const isFireHighConfidence = result.detected_class === "Fire" && result.confidence >= ALARM_THRESHOLD_FIRE;
+      const isSmokeHighConfidence = result.detected_class === "Smoke" && result.confidence >= ALARM_THRESHOLD_SMOKE;
+      const shouldTriggerAlarm = isFireHighConfidence || isSmokeHighConfidence;
 
-      // Tentukan emoji dan label berdasarkan jenis deteksi
-      const emoji = result.detected_class === "Fire" ? "🔥" : "💨";
-      const label = result.detected_class === "Fire" ? "API" : "ASAP";
+      if (shouldTriggerAlarm) {
+        // 🔊 PLAY ALARM hanya jika confidence tinggi
+        playAlarm();
 
-      setAlerts(prev => [
-        {
-          id: Date.now(),
-          type: result.detected_class,  // untuk styling
-          message: `${emoji} KEBAKARAN - ${label} terdeteksi (${(result.confidence * 100).toFixed(0)}%)`
-        },
-        ...prev
-      ].slice(0, 5));
+        // Tentukan emoji dan label
+        const emoji = result.detected_class === "Fire" ? "🔥" : "💨";
+        const label = result.detected_class === "Fire" ? "API" : "ASAP";
+
+        setAlerts(prev => [
+          {
+            id: Date.now(),
+            type: result.detected_class,
+            message: `${emoji} KEBAKARAN - ${label} terdeteksi (${(result.confidence * 100).toFixed(0)}%) - ALARM AKTIF!`
+          },
+          ...prev
+        ].slice(0, 5));
+      } else {
+        // Deteksi tapi confidence rendah - tidak ada alarm/notifikasi
+        console.log(`[LOW CONFIDENCE] ${result.detected_class} detected at ${(result.confidence * 100).toFixed(0)}% - No alarm triggered`);
+      }
     } else {
       setFireDetected(false);
-      // Opsional: hentikan alarm otomatis saat tidak ada api
-      // stopAlarm();
     }
   };
 
@@ -216,7 +227,7 @@ function DashboardApp() {
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       {/* Hidden Audio Element untuk Alarm */}
-      <audio ref={alarmAudioRef} src="components/alarm.mp3" preload="auto" />
+      <audio ref={alarmAudioRef} src="assets/alarm.mp3" preload="auto" />
       
       <nav className="bg-gray-800 p-4 flex justify-between">
         <b>🔥 Fire Detection</b>
@@ -253,7 +264,7 @@ function DashboardApp() {
         <div className="bg-gray-800 p-4 rounded">
           <p>Status API: <b>{apiStatus}</b></p>
           <p>Status: <b className={fireDetected ? "text-red-500" : "text-green-500"}>
-            {fireDetected ? "🚨 KEBAKARAN" : "✅ Aman"}
+            {fireDetected ? "🚨 TERDETEKSI" : "✅ Aman"}
           </b></p>
           <p>Jenis: <b className={detectedClass === "Fire" ? "text-orange-500" : detectedClass === "Smoke" ? "text-gray-400" : ""}>
             {detectedClass === "Fire" ? "🔥 Api" : detectedClass === "Smoke" ? "💨 Asap" : "-"}
@@ -261,8 +272,15 @@ function DashboardApp() {
           <p>Confidence: <b>{lastConfidence > 0 ? `${(lastConfidence * 100).toFixed(0)}%` : "-"}</b></p>
           <p>Total Deteksi: <b>{totalDetections}</b></p>
           <p>Alarm: <b className={alarmPlaying ? "text-yellow-500" : "text-gray-500"}>
-            {alarmPlaying ? "🔔 Aktif (15 detik)" : "🔕 Mati"}
+            {alarmPlaying ? "🔔 Aktif (30 detik)" : "🔕 Mati"}
           </b></p>
+
+          {/* Info Threshold */}
+          <div className="mt-2 p-2 bg-gray-700 rounded text-xs">
+            <p>⚠️ Alarm aktif jika:</p>
+            <p>• Fire ≥ 70%</p>
+            <p>• Smoke ≥ 60%</p>
+          </div>
 
           {/* Tombol Stop Alarm */}
           {alarmPlaying && (
@@ -276,7 +294,7 @@ function DashboardApp() {
 
           <hr className="my-2 border-gray-600" />
 
-          <b>Riwayat Alert</b>
+          <b>Riwayat Alert (High Confidence)</b>
           {alerts.length === 0 && (
             <p className="text-gray-500 text-sm">Belum ada alert</p>
           )}
