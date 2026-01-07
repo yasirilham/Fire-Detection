@@ -18,3 +18,6 @@ notebook/
 # OS
 .DS_Store
 Thumbs.db
+
+# User-specific
+start_backend.bat
