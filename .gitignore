@@ -13,7 +13,7 @@ venv/
 dataset/
 runs/
 notebook/
-*.pt
+# *.pt  # Uncomment jika tidak mau upload model
 
 # OS
 .DS_Store
