@@ -21,3 +21,6 @@ Thumbs.db
 
 # User-specific
 start_backend.bat
+
+# Logs (per-user)
+backend/logs/
