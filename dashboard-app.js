@@ -1,25 +1,14 @@
-// dashboard-app.js
+// dashboard-app.js - SIMPLIFIED
 const BACKEND_URL = "http://127.0.0.1:8000";
-
-// ===============================
-// THRESHOLD UNTUK ALARM & NOTIFIKASI
-// ===============================
-const ALARM_THRESHOLD_FIRE = 0.70;   // Fire harus >= 70% untuk alarm
-const ALARM_THRESHOLD_SMOKE = 0.60;  // Smoke harus >= 60% untuk alarm
-const ALARM_INTERVAL = 30000;        // Alarm berbunyi setiap 30 detik
+const ALARM_THRESHOLD = 0.70;
+const ALARM_INTERVAL = 30000;
 
 async function sendControl(action, userId) {
-  console.log("[CONTROL] sending:", action, "user_id:", userId);
-
   const res = await fetch(`${BACKEND_URL}/control`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      action,
-      user_id: userId
-    })
+    body: JSON.stringify({ action, user_id: userId })
   });
-
   return await res.json();
 }
 
@@ -34,34 +23,24 @@ function DashboardApp() {
   const [totalDetections, setTotalDetections] = React.useState(0);
   const [alerts, setAlerts] = React.useState([]);
   const [alarmPlaying, setAlarmPlaying] = React.useState(false);
+  const [telegramReport, setTelegramReport] = React.useState(null);
+  const [telegramStatus, setTelegramStatus] = React.useState(null);
 
   const videoRef = React.useRef(null);
   const streamRef = React.useRef(null);
   const detectionAPIRef = React.useRef(null);
   const alarmAudioRef = React.useRef(null);
   const lastAlarmTimeRef = React.useRef(0);
+  const lastTelegramAlertRef = React.useRef(0);
 
-  // ===============================
-  // ALARM FUNCTIONS
-  // ===============================
-  const playAlarmOnce = () => {
-    if (alarmAudioRef.current) {
-      alarmAudioRef.current.currentTime = 0;
-      alarmAudioRef.current.loop = false;
-      alarmAudioRef.current.play()
-        .catch(err => console.error("Error playing alarm:", err));
-    }
-  };
-
+  // Alarm
   const playAlarm = () => {
     const now = Date.now();
-    
-    // Cek apakah sudah 30 detik sejak alarm terakhir
-    if (now - lastAlarmTimeRef.current >= ALARM_INTERVAL) {
+    if (now - lastAlarmTimeRef.current >= ALARM_INTERVAL && alarmAudioRef.current) {
       lastAlarmTimeRef.current = now;
-      playAlarmOnce();
+      alarmAudioRef.current.currentTime = 0;
+      alarmAudioRef.current.play().catch(err => console.error(err));
       setAlarmPlaying(true);
-      console.log("🔊 Alarm berbunyi!");
     }
   };
 
@@ -74,39 +53,33 @@ function DashboardApp() {
     setAlarmPlaying(false);
   };
 
-  // ===============================
-  // AUTH INIT (PENTING)
-  // ===============================
+  // Auth init
   React.useEffect(() => {
     async function init() {
-      console.log("[AUTH] checking session...");
       const u = await getCurrentUser();
-      console.log("[AUTH] session result:", u);
-
       if (!u || !u.id) {
         window.location.href = "index.html";
         return;
       }
-
       setUser(u);
+
+      try {
+        const res = await fetch(`${BACKEND_URL}/telegram/status`, { cache: "no-store" });
+        if (res.ok) setTelegramStatus(await res.json());
+      } catch (e) {
+        // Backend might be down; ignore.
+      }
     }
     init();
-
     return () => stopCamera();
   }, []);
 
-  // ===============================
-  // CAMERA
-  // ===============================
+  // Camera
   const startCamera = async () => {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { width: 640, height: 480 }
-    });
-
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
     streamRef.current = stream;
     videoRef.current.srcObject = stream;
     await videoRef.current.play();
-
     setCameraActive(true);
   };
 
@@ -115,202 +88,225 @@ function DashboardApp() {
       streamRef.current.getTracks().forEach(t => t.stop());
       streamRef.current = null;
     }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
+    if (videoRef.current) videoRef.current.srcObject = null;
     setCameraActive(false);
-    stopDetection();
   };
 
-  // ===============================
-  // DETECTION
-  // ===============================
+  // Detection
   const startDetection = async () => {
-    console.log("[START DETECTION] user:", user);
-
-    if (!user || !user.id) {
-      alert("User belum siap");
-      return;
-    }
-
-    if (!cameraActive) {
-      await startCamera();
-    }
+    if (!user?.id) return alert("User belum siap");
+    if (!cameraActive) await startCamera();
 
     const ctrl = await sendControl("start", user.id);
-    console.log("[CONTROL RESPONSE]", ctrl);
-
-    if (!ctrl.active) {
-      alert("Backend gagal aktif");
-      return;
-    }
+    if (!ctrl.active) return alert("Backend gagal aktif");
 
     setDetectionActive(true);
     setApiStatus("Berjalan");
 
-    detectionAPIRef.current = initFireDetectionAPI(
-      videoRef.current,
-      handleDetectionResult
-    );
-
+    detectionAPIRef.current = initFireDetectionAPI(videoRef.current, handleDetectionResult);
     detectionAPIRef.current.start();
   };
 
   const stopDetection = async () => {
     if (user) await sendControl("stop", user.id);
-
     if (detectionAPIRef.current) {
       detectionAPIRef.current.stop();
       detectionAPIRef.current = null;
     }
-
-    // Stop alarm ketika deteksi dihentikan
     stopAlarm();
-
     setDetectionActive(false);
     setApiStatus("Siap");
   };
 
-  // ===============================
-  // HANDLE RESULT
-  // ===============================
-  const handleDetectionResult = (result) => {
-    console.log("DETECTION RESULT:", result);
+  const stopAll = async () => {
+    await stopDetection();
+    stopCamera();
+  };
 
-    // Update state untuk display
+  const shutdownBackend = async () => {
+    try {
+      await fetch(`${BACKEND_URL}/shutdown`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }
+      });
+    } catch (e) {
+      // Backend may already be down; ignore.
+      console.warn("[SHUTDOWN] backend request failed", e);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await stopAll();
+    } catch (e) {
+      console.warn("[LOGOUT] stopAll failed", e);
+    }
+
+    await shutdownBackend();
+    logout();
+  };
+
+  // Handle detection result
+  const handleDetectionResult = (result) => {
     setDetectedClass(result.detected_class);
     setLastConfidence(result.confidence || 0);
 
-    if (result.fire === true) {
-      // Api/Asap terdeteksi (sudah melewati stabilization)
+    if (result.telegram) {
+      setTelegramReport(result.telegram);
+
+      // Refresh status if backend reports telegram activity/skip.
+      fetch(`${BACKEND_URL}/telegram/status`, { cache: "no-store" })
+        .then(r => (r.ok ? r.json() : null))
+        .then(j => {
+          if (j) setTelegramStatus(j);
+        })
+        .catch(() => {});
+    }
+
+    // Tambah riwayat jika Telegram benar-benar terkirim (hindari spam)
+    if (result.telegram && (result.telegram.status === "sent" || result.telegram.status === "partial")) {
+      const now = Date.now();
+      if (now - lastTelegramAlertRef.current >= 1000) {
+        lastTelegramAlertRef.current = now;
+
+        const nama = result.user?.name || "-";
+        const lokasi = result.user?.location || "-";
+        const jenis = result.detected_class === "Smoke" ? "asap" : "api";
+        const persen = typeof result.confidence === "number" ? `${(result.confidence * 100).toFixed(0)}%` : "-";
+        const msg = `pesan terkirim. ke : (${nama}) deteksi : (${jenis}), persen : ${persen}, alamat : ${lokasi}`;
+
+        setAlerts(prev => [{
+          id: now,
+          type: "TELEGRAM",
+          message: msg
+        }, ...prev].slice(0, 5));
+      }
+    }
+
+    if (result.fire) {
       setFireDetected(true);
       setTotalDetections(prev => prev + 1);
 
-      // Cek apakah confidence cukup tinggi untuk alarm & notifikasi
-      const isFireHighConfidence = result.detected_class === "Fire" && result.confidence >= ALARM_THRESHOLD_FIRE;
-      const isSmokeHighConfidence = result.detected_class === "Smoke" && result.confidence >= ALARM_THRESHOLD_SMOKE;
-      const shouldTriggerAlarm = isFireHighConfidence || isSmokeHighConfidence;
-
-      if (shouldTriggerAlarm) {
-        // 🔊 PLAY ALARM hanya jika confidence tinggi
+      // Alarm jika confidence tinggi
+      if (result.confidence >= ALARM_THRESHOLD) {
         playAlarm();
-
-        // Tentukan emoji dan label
+        
         const emoji = result.detected_class === "Fire" ? "🔥" : "💨";
         const label = result.detected_class === "Fire" ? "API" : "ASAP";
-
-        setAlerts(prev => [
-          {
-            id: Date.now(),
-            type: result.detected_class,
-            message: `${emoji} KEBAKARAN - ${label} terdeteksi (${(result.confidence * 100).toFixed(0)}%) - ALARM AKTIF!`
-          },
-          ...prev
-        ].slice(0, 5));
-      } else {
-        // Deteksi tapi confidence rendah - tidak ada alarm/notifikasi
-        console.log(`[LOW CONFIDENCE] ${result.detected_class} detected at ${(result.confidence * 100).toFixed(0)}% - No alarm triggered`);
+        
+        setAlerts(prev => [{
+          id: Date.now(),
+          type: result.detected_class,
+          message: `${emoji} ${label} terdeteksi (${(result.confidence * 100).toFixed(0)}%)`
+        }, ...prev].slice(0, 5));
       }
     } else {
       setFireDetected(false);
     }
   };
 
+  if (!user) return <div className="text-white p-10">Loading...</div>;
 
-  if (!user) {
-    return <div className="text-white p-10">Loading user...</div>;
-  }
-
-  // ===============================
   // UI
-  // ===============================
   return (
     <div className="min-h-screen bg-gray-900 text-white">
-      {/* Hidden Audio Element untuk Alarm */}
-      <audio ref={alarmAudioRef} src="assets/alarm.mp3" preload="auto" />
+      <audio ref={alarmAudioRef} src="assets/Alarm1.mp3" preload="auto" />
       
       <nav className="bg-gray-800 p-4 flex justify-between">
-        <b>🔥 Fire Detection</b>
-        <button onClick={logout} className="bg-red-600 px-4 py-1 rounded">
+        <b>🔥 Fire Detection System</b>
+        <button onClick={handleLogout} className="bg-red-600 px-4 py-1 rounded hover:bg-red-700">
           Logout
         </button>
       </nav>
 
       <div className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Video Panel */}
         <div className="lg:col-span-2 bg-gray-800 p-4 rounded">
           <button
-            onClick={detectionActive ? stopDetection : startDetection}
-            className="bg-red-600 px-4 py-2 rounded mb-4"
+            onClick={detectionActive ? stopAll : startDetection}
+            className={`px-6 py-2 rounded mb-4 font-bold ${detectionActive ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}`}
           >
-            {detectionActive ? "Stop Deteksi" : "Mulai Deteksi"}
+            {detectionActive ? "⏹ Stop Deteksi" : "▶ Mulai Deteksi"}
           </button>
 
           <div className="bg-black aspect-video rounded overflow-hidden">
-            <video
-              ref={videoRef}
-              muted
-              autoPlay
-              playsInline
-              className={cameraActive ? "w-full h-full object-cover" : "hidden"}
-            />
+            <video ref={videoRef} muted autoPlay playsInline className={cameraActive ? "w-full h-full object-cover" : "hidden"} />
             {!cameraActive && (
               <div className="flex items-center justify-center h-full text-gray-400">
-                Kamera belum aktif
+                📹 Kamera belum aktif
               </div>
             )}
           </div>
         </div>
 
-        <div className="bg-gray-800 p-4 rounded">
-          <p>Status API: <b>{apiStatus}</b></p>
-          <p>Status: <b className={fireDetected ? "text-red-500" : "text-green-500"}>
-            {fireDetected ? "🚨 TERDETEKSI" : "✅ Aman"}
-          </b></p>
-          <p>Jenis: <b className={detectedClass === "Fire" ? "text-orange-500" : detectedClass === "Smoke" ? "text-gray-400" : ""}>
-            {detectedClass === "Fire" ? "🔥 Api" : detectedClass === "Smoke" ? "💨 Asap" : "-"}
-          </b></p>
-          <p>Confidence: <b>{lastConfidence > 0 ? `${(lastConfidence * 100).toFixed(0)}%` : "-"}</b></p>
-          <p>Total Deteksi: <b>{totalDetections}</b></p>
-          <p>Alarm: <b className={alarmPlaying ? "text-yellow-500" : "text-gray-500"}>
-            {alarmPlaying ? "🔔 Aktif (30 detik)" : "🔕 Mati"}
-          </b></p>
-
-          {/* Info Threshold */}
-          <div className="mt-2 p-2 bg-gray-700 rounded text-xs">
-            <p>⚠️ Alarm aktif jika:</p>
-            <p>• Fire ≥ 70%</p>
-            <p>• Smoke ≥ 60%</p>
+        {/* Info Panel */}
+        <div className="bg-gray-800 p-4 rounded space-y-2">
+          <h3 className="text-xl font-bold mb-4">Status Deteksi</h3>
+          
+          <div className="space-y-2 text-sm">
+            <p>API: <b className="text-green-400">{apiStatus}</b></p>
+            <p>Status: <b className={fireDetected ? "text-red-500" : "text-green-500"}>
+              {fireDetected ? "🚨 TERDETEKSI" : "✅ Aman"}
+            </b></p>
+            <p>Jenis: <b className={detectedClass === "Fire" ? "text-orange-500" : detectedClass === "Smoke" ? "text-gray-400" : ""}>
+              {detectedClass === "Fire" ? "🔥 Api" : detectedClass === "Smoke" ? "💨 Asap" : "-"}
+            </b></p>
+            <p>Confidence: <b>{lastConfidence > 0 ? `${(lastConfidence * 100).toFixed(0)}%` : "-"}</b></p>
+            <p>Total: <b>{totalDetections}</b></p>
+            <p>Alarm: <b className={alarmPlaying ? "text-yellow-500 animate-pulse" : "text-gray-500"}>
+              {alarmPlaying ? "🔔 Aktif" : "🔕 Mati"}
+            </b></p>
           </div>
 
-          {/* Tombol Stop Alarm */}
+          <div className="mt-4 p-3 bg-gray-700 rounded text-xs">
+            <p className="font-bold mb-1">⚙️ Sistem:</p>
+            <p>• Motion Detection: ON</p>
+            <p>• Alarm Threshold: ≥70%</p>
+            <p>
+              • Telegram: {telegramStatus?.enabled === true ? "Aktif" : telegramStatus?.enabled === false ? "Nonaktif" : "-"}
+              {typeof telegramStatus?.cooldown === "number" ? ` (${telegramStatus.cooldown}s cooldown)` : ""}
+            </p>
+          </div>
+
           {alarmPlaying && (
             <button 
               onClick={stopAlarm}
-              className="w-full mt-3 bg-yellow-600 hover:bg-yellow-700 px-4 py-2 rounded font-bold animate-pulse"
+              className="w-full mt-3 bg-yellow-600 hover:bg-yellow-700 px-4 py-2 rounded font-bold"
             >
               🔕 Matikan Alarm
             </button>
           )}
 
-          <hr className="my-2 border-gray-600" />
+          <hr className="my-4 border-gray-600" />
 
-          <b>Riwayat Alert (High Confidence)</b>
-          {alerts.length === 0 && (
-            <p className="text-gray-500 text-sm">Belum ada alert</p>
-          )}
-          {alerts.map(a => (
-            <div 
-              key={a.id} 
-              className={`text-sm py-1 ${a.type === "Fire" ? "text-orange-400" : "text-gray-400"}`}
-            >
-              {a.message}
-            </div>
-          ))}
+          <div>
+            <b className="text-sm">📋 Riwayat Alert</b>
+            {telegramReport?.status === "sent" && (
+              <p className="text-xs text-green-400 mt-1">Telegram: pesan terkirim</p>
+            )}
+            {telegramReport?.status === "partial" && (
+              <p className="text-xs text-yellow-400 mt-1">Telegram: terkirim sebagian</p>
+            )}
+            {telegramReport?.status === "cooldown" && (
+              <p className="text-xs text-gray-400 mt-1">Telegram: cooldown</p>
+            )}
+            {telegramReport?.status === "disabled" && (
+              <p className="text-xs text-gray-400 mt-1">Telegram: nonaktif</p>
+            )}
+            {telegramReport?.status === "error" && (
+              <p className="text-xs text-red-400 mt-1">Telegram: gagal mengirim</p>
+            )}
+            {alerts.length === 0 && <p className="text-gray-500 text-xs mt-2">Belum ada alert</p>}
+            {alerts.map(a => (
+              <div key={a.id} className={`text-xs py-1 mt-1 ${a.type === "Fire" ? "text-orange-400" : a.type === "Smoke" ? "text-gray-400" : "text-green-400"}`}>
+                {a.message}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-ReactDOM.createRoot(document.getElementById("root"))
-  .render(<DashboardApp />);
+ReactDOM.createRoot(document.getElementById("root")).render(<DashboardApp />);

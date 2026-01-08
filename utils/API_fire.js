@@ -61,7 +61,9 @@ function initFireDetectionAPI(videoElement, onResult) {
           fire: data.fire === true,
           confidence: data.confidence || 0,
           detected_class: data.detected_class || null,  // Fire / Smoke / null
-          time: data.time || "-"
+          telegram: data.telegram || null,
+          time: data.time || "-",
+          user: data.user || null
         });
 
       } catch (err) {
