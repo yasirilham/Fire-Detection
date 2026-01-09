@@ -315,14 +315,12 @@ Catatan:
 
 ## File yang Tidak Ada di GitHub
 
-File-file berikut TIDAK ada di repository karena ukuran besar atau berisi data sensitif:
+Catatan: beberapa file/folder bersifat besar/opsional. Untuk project ini, `backend/.env` saat ini TERIKUT di repository (sensitif).
 
 ### 1. Environment Variables (`backend/.env`)
 - Status: WAJIB
 - Fungsi: Konfigurasi database dan Telegram
-- Template: (dihapus)
-- Catatan: File ini berisi kredensial/token (sensitif), jangan di-commit ke GitHub
-- File `backend/.env` sudah disimpan di Google Drive (privat): https://drive.google.com/drive/folders/1IMXcdK6cZcv8W3cUfu5xhxGhZvV5vqXe?usp=drive_link
+- Catatan keamanan: file ini sensitif. Jika repo ini akan dibagikan publik, sebaiknya hapus `backend/.env` dari git, tambahkan ke `.gitignore`, lalu buat ulang manual di tiap mesin.
 
 ### 2. Dataset (opsional)
 - Folder `dataset/` hanya dibutuhkan jika ingin re-train model
@@ -349,12 +347,12 @@ Link Google Drive: https://drive.google.com/drive/folders/1IMXcdK6cZcv8W3cUfu5xh
 Upload folder project `firedetec/` beserta isi berikut:
 
 - `backend/` (termasuk `api.py`, `db.py`, `user_service.py`, `telegram_service.py`, `requirements.txt`)
-- `backend/.env` (privat) lalu dibuat ulang di laptop tujuan
+- `backend/.env` (saat ini sudah ikut repo; jika ingin lebih aman, buat ulang manual di laptop tujuan)
 - `models/best.pt`
 - `database/fire_detect.sql`
 - File web & auth: `index.html`, `dashboard.html`, `regis.html`, `backend_web/login.php`, `backend_web/register.php`, `backend_web/logout.php`, `backend_web/check_session.php`, `backend_web/db.php`
 - Jika pakai auto-start backend dari tombol Login: `backend_web/start_backend.php` dan `start_backend.bat --bg`
-- Asset & UI code: `assets/`, `static/`, `styles/`, serta semua file JS di bawah `utils/` (termasuk `utils/components/`, dan entrypoints `utils/auth-app.js`, `utils/dashboard-app.js`)
+- Asset & UI code: `assets/`, `static/`, `styles/`, serta semua file JS di bawah `utils/` (termasuk `utils/components/`, `utils/ui-common.js`, dan entrypoints `utils/auth-app.js`, `utils/dashboard-app.js`)
 - `setup_backend.bat` (opsional tapi sangat membantu untuk setup 1 kali di laptop baru)
 - `start_backend.bat` (opsional tapi sangat membantu di Windows)
 
@@ -475,9 +473,17 @@ firedetec/
 |   |-- user_service.py      # User management service
 |   |-- telegram_service.py  # Telegram notification service
 |   |-- requirements.txt     # Python dependencies
-|   |-- .env                 # Environment variables (buat manual)
+|   |-- .env                 # Environment variables (sensitif)
 |   |-- screenshots/         # Screenshot hasil deteksi (auto-created)
 |   `-- logs/                # Log files (auto-created)
+|
+|-- backend_web/             # PHP endpoints (session/auth + backend starter)
+|   |-- login.php
+|   |-- register.php
+|   |-- logout.php
+|   |-- check_session.php
+|   |-- db.php
+|   `-- start_backend.php
 |
 |-- models/
 |   `-- best.pt              # YOLOv8 model (wajib untuk runtime)
@@ -489,35 +495,27 @@ firedetec/
 |-- assets/
 |   `-- Alarm1.mp3           # Alarm sound effect
 |
-|-- components/              # React components
-|   |-- LoginForm.js
-|   `-- RegisterForm.js
-|
 |-- utils/                   # Utilities
 |   |-- auth.js              # Authentication helper
-|   `-- (merged) API_fire.js # Di-inline ke utils/dashboard-app.js
+|   |-- auth-app.js          # Login + Registration app
+|   |-- dashboard-app.js     # Dashboard app (termasuk initFireDetectionAPI)
+|   |-- ui-common.js         # ErrorBoundary + Alert
+|   `-- components/
+|       |-- LoginForm.js
+|       `-- RegisterForm.js
 |
 |-- styles/
 |   `-- main.css             # Custom CSS
 |
-|-- utils/
-|   `-- ui-common.js         # ErrorBoundary + Alert
-|
 |-- index.html               # Login page
 |-- regis.html               # Registration page
 |-- dashboard.html           # Dashboard page
-|-- utils/auth-app.js              # Login + Registration app
-|-- utils/dashboard-app.js         # Dashboard app
 |
-|-- backend_web/login.php                # Login handler
-|-- backend_web/register.php             # Registration handler
-|-- backend_web/logout.php               # Logout handler
-|-- backend_web/check_session.php        # Session validation
-|-- backend_web/db.php                   # Database connection (PHP)
-|
+|-- setup_backend.bat         # Setup .venv + dependencies (Windows)
+|-- start_backend.bat         # Start backend (interactive / --bg)
 |-- .gitignore               # Git ignore rules
 |-- README.md                # This file
-`-- (dihapus) CHANGELOG_SIMPLIFIED.md
+`-- (docs opsional dihapus)
 ```
 
 ---
@@ -544,9 +542,9 @@ firedetec/
 
 ### Important Notes:
 
-1. Jangan commit file `.env` ke GitHub
+1. `backend/.env` bersifat sensitif
 - Berisi token Telegram dan kredensial database
-- Sudah ada di `.gitignore`
+- Saat ini file tersebut sudah ter-commit. Jika repo akan dibuka publik, sebaiknya dihapus dari history dan dipindahkan ke konfigurasi lokal.
 
 2. Ubah password database production
 - Default password kosong hanya untuk development
