@@ -20,7 +20,7 @@ notebook/
 Thumbs.db
 
 # Local env (secrets)
-backend/.env
+
 
 # Logs (per-user)
 backend/logs/

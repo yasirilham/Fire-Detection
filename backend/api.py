@@ -46,9 +46,9 @@ logger = logging.getLogger("FireDetection")
 # Threshold
 # Lebih sensitif untuk objek kecil, tapi notif tetap dikunci oleh NOTIFY_*
 CONF_FIRE = 0.45
-CONF_SMOKE = 0.55
+CONF_SMOKE = 0.10
 NOTIFY_FIRE = 0.70
-NOTIFY_SMOKE = 0.70
+NOTIFY_SMOKE = 0.15
 
 # Area minimal (anti-noise)
 MIN_AREA_FIRE = 900
