@@ -320,7 +320,7 @@ File-file berikut TIDAK ada di repository karena ukuran besar atau berisi data s
 ### 1. Environment Variables (`backend/.env`)
 - Status: WAJIB
 - Fungsi: Konfigurasi database dan Telegram
-- Template: `backend/.env.example`
+- Template: (dihapus)
 - Catatan: File ini berisi kredensial/token (sensitif), jangan di-commit ke GitHub
 - File `backend/.env` sudah disimpan di Google Drive (privat): https://drive.google.com/drive/folders/1IMXcdK6cZcv8W3cUfu5xhxGhZvV5vqXe?usp=drive_link
 
@@ -349,7 +349,7 @@ Link Google Drive: https://drive.google.com/drive/folders/1IMXcdK6cZcv8W3cUfu5xh
 Upload folder project `firedetec/` beserta isi berikut:
 
 - `backend/` (termasuk `api.py`, `db.py`, `user_service.py`, `telegram_service.py`, `requirements.txt`)
-- `backend/.env` (privat) atau minimal `backend/.env.example` lalu dibuat ulang jadi `.env` di laptop tujuan
+- `backend/.env` (privat) lalu dibuat ulang di laptop tujuan
 - `models/best.pt`
 - `database/fire_detect.sql`
 - File web & auth: `index.html`, `dashboard.html`, `regis.html`, `backend_web/login.php`, `backend_web/register.php`, `backend_web/logout.php`, `backend_web/check_session.php`, `backend_web/db.php`
@@ -517,7 +517,7 @@ firedetec/
 |
 |-- .gitignore               # Git ignore rules
 |-- README.md                # This file
-`-- CHANGELOG_SIMPLIFIED.md  # Changelog dokumentasi
+`-- (dihapus) CHANGELOG_SIMPLIFIED.md
 ```
 
 ---
