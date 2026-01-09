@@ -19,7 +19,7 @@ function RegisterForm({ onLoginClick, showAlert }) {
       formData.append("password", password);
       formData.append("location", location);
 
-      const res = await fetch("register.php", {
+      const res = await fetch("backend_web/register.php", {
         method: "POST",
         body: formData,
       });

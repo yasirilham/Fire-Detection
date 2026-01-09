@@ -3,6 +3,79 @@ const BACKEND_URL = "http://127.0.0.1:8000";
 const ALARM_THRESHOLD = 0.70;
 const ALARM_INTERVAL = 30000;
 
+// ============================================================
+// FIRE DETECTION API CLIENT (inlined from utils/API_fire.js)
+// ============================================================
+
+function initFireDetectionAPI(videoElement, onResult) {
+  let intervalId = null;
+
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+
+  // Interval deteksi (ms) - sesuaikan dengan performa
+  const INTERVAL = 800;
+
+  async function sendFrame() {
+    if (!videoElement) return;
+    if (videoElement.videoWidth === 0 || videoElement.videoHeight === 0) return;
+
+    canvas.width = videoElement.videoWidth;
+    canvas.height = videoElement.videoHeight;
+
+    ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+
+    canvas.toBlob(async (blob) => {
+      if (!blob) return;
+
+      const formData = new FormData();
+      formData.append("file", blob, "frame.jpg");
+
+      try {
+        const res = await fetch(`${BACKEND_URL}/detect`, {
+          method: "POST",
+          body: formData
+        });
+
+        if (!res.ok) {
+          console.error("[DETECT] HTTP error:", res.status);
+          return;
+        }
+
+        const data = await res.json();
+        console.log("[DETECT RESPONSE]", data);
+
+        onResult({
+          fire: data.fire === true,
+          confidence: data.confidence || 0,
+          detected_class: data.detected_class || null,
+          telegram: data.telegram || null,
+          time: data.time || "-",
+          user: data.user || null
+        });
+      } catch (err) {
+        console.error("[DETECT] fetch error:", err);
+      }
+    }, "image/jpeg", 0.7);
+  }
+
+  return {
+    start() {
+      if (intervalId) return;
+      console.log("🔥 Fire detection loop started");
+      intervalId = setInterval(sendFrame, INTERVAL);
+    },
+
+    stop() {
+      if (intervalId) {
+        clearInterval(intervalId);
+        intervalId = null;
+        console.log("🛑 Fire detection loop stopped");
+      }
+    }
+  };
+}
+
 async function sendControl(action, userId) {
   const res = await fetch(`${BACKEND_URL}/control`, {
     method: "POST",

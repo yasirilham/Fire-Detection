@@ -28,7 +28,7 @@ if (backend_is_running()) {
   exit;
 }
 
-$root = __DIR__;
+$root = dirname(__DIR__);
 $envFile = $root . DIRECTORY_SEPARATOR . 'backend' . DIRECTORY_SEPARATOR . '.env';
 $venvPython = $root . DIRECTORY_SEPARATOR . '.venv' . DIRECTORY_SEPARATOR . 'Scripts' . DIRECTORY_SEPARATOR . 'python.exe';
 $apiFile = $root . DIRECTORY_SEPARATOR . 'backend' . DIRECTORY_SEPARATOR . 'api.py';
@@ -61,16 +61,17 @@ if (!file_exists($apiFile)) {
   exit;
 }
 
-$bat = $root . DIRECTORY_SEPARATOR . 'start_backend_bg.bat';
+$bat = $root . DIRECTORY_SEPARATOR . 'start_backend.bat';
 
 if (!file_exists($bat)) {
   http_response_code(500);
-  echo json_encode(['status' => 'error', 'message' => 'start_backend_bg.bat not found']);
+  echo json_encode(['status' => 'error', 'message' => 'start_backend.bat not found']);
   exit;
 }
 
 // Start detached in Windows (Laragon/Apache on Windows)
-$cmd = 'cmd /c start "FireDetectionBackend" /min "' . $bat . '"';
+// Use --bg so the script does not pause.
+$cmd = 'cmd /c start "FireDetectionBackend" /min "' . $bat . '" --bg';
 @pclose(@popen($cmd, 'r'));
 
 // Give it a moment, then re-check

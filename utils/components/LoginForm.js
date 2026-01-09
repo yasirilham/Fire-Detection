@@ -15,7 +15,7 @@ function LoginForm({ onRegisterClick, showAlert }) {
       formData.append("username", username);
       formData.append("password", password);
 
-      const res = await fetch("login.php", {
+      const res = await fetch("backend_web/login.php", {
         method: "POST",
         body: formData,
         credentials: "include" // 🔥 PENTING

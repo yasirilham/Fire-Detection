@@ -30,7 +30,8 @@ if ($conn->connect_error) {
     }
 
     // 3) Import schema/data dari file SQL (sekali saat DB baru dibuat)
-    $sqlFile = __DIR__ . DIRECTORY_SEPARATOR . "database" . DIRECTORY_SEPARATOR . "fire_detect.sql";
+    $root = dirname(__DIR__);
+    $sqlFile = $root . DIRECTORY_SEPARATOR . "database" . DIRECTORY_SEPARATOR . "fire_detect.sql";
     if (!file_exists($sqlFile)) {
         die("File SQL tidak ditemukan: " . $sqlFile);
     }

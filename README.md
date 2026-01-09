@@ -201,7 +201,7 @@ Opsi Manual (jika masih bermasalah):
 
 ## Konfigurasi
 
-### 1. Database Settings (`db.php`)
+### 1. Database Settings (`backend_web/db.php`)
 
 ```php
 $host = "localhost";
@@ -219,7 +219,7 @@ DB_PASS=
 DB_NAME=fire_detect
 ```
 
-### 3. Frontend Settings (`dashboard-app.js`)
+### 3. Frontend Settings (`utils/dashboard-app.js`)
 
 ```javascript
 const BACKEND_URL = "http://127.0.0.1:8000";  // URL backend
@@ -276,7 +276,7 @@ INFO:     Application startup complete.
 ```
 
 Catatan:
-- Halaman login bisa menyalakan backend otomatis (tombol Login) via `start_backend.php` (Windows/Laragon).
+- Halaman login bisa menyalakan backend otomatis (tombol Login) via `backend_web/start_backend.php` (Windows/Laragon).
 - Tombol Logout di dashboard akan mematikan backend otomatis.
 
 ### Step 2: Start Frontend (PHP)
@@ -352,9 +352,9 @@ Upload folder project `firedetec/` beserta isi berikut:
 - `backend/.env` (privat) atau minimal `backend/.env.example` lalu dibuat ulang jadi `.env` di laptop tujuan
 - `models/best.pt`
 - `database/fire_detect.sql`
-- File web & auth: `index.html`, `dashboard.html`, `regis.html`, `login.php`, `register.php`, `logout.php`, `check_session.php`, `db.php`
-- Jika pakai auto-start backend dari tombol Login: `start_backend.php` dan `start_backend_bg.bat`
-- Asset & UI code: `assets/`, `components/`, `function/`, `static/`, `styles/`, `utils/`, serta file JS utama (`app.js`, `dashboard-app.js`, `regis-app.js`)
+- File web & auth: `index.html`, `dashboard.html`, `regis.html`, `backend_web/login.php`, `backend_web/register.php`, `backend_web/logout.php`, `backend_web/check_session.php`, `backend_web/db.php`
+- Jika pakai auto-start backend dari tombol Login: `backend_web/start_backend.php` dan `start_backend.bat --bg`
+- Asset & UI code: `assets/`, `static/`, `styles/`, serta semua file JS di bawah `utils/` (termasuk `utils/components/`, dan entrypoints `utils/auth-app.js`, `utils/dashboard-app.js`)
 - `setup_backend.bat` (opsional tapi sangat membantu untuk setup 1 kali di laptop baru)
 - `start_backend.bat` (opsional tapi sangat membantu di Windows)
 
@@ -372,7 +372,7 @@ Upload folder project `firedetec/` beserta isi berikut:
 
 ### Penting: folder virtual environment (`.venv`)
 
-File `start_backend.bat` dan `start_backend_bg.bat` mengharuskan ada virtual environment bernama `.venv` di root project.
+File `start_backend.bat` (termasuk mode `--bg`) mengharuskan ada virtual environment bernama `.venv` di root project.
 
 Disarankan jangan upload `.venv` ke Google Drive (sering tidak portable). Lebih aman buat ulang di laptop tujuan:
 
@@ -420,7 +420,7 @@ Error: `mysql.connector.errors.InterfaceError: 2003`
 
 Solusi:
 1. Pastikan MySQL sudah running
-2. Cek username/password di `db.php` dan `backend/.env`
+2. Cek username/password di `backend_web/db.php` dan `backend/.env`
 3. Test koneksi:
    ```bash
    mysql -u root -p
@@ -491,31 +491,29 @@ firedetec/
 |
 |-- components/              # React components
 |   |-- LoginForm.js
-|   |-- RegisterForm.js
-|   `-- Alert.js
+|   `-- RegisterForm.js
 |
 |-- utils/                   # Utilities
 |   |-- auth.js              # Authentication helper
-|   `-- API_fire.js          # API client untuk deteksi
+|   `-- (merged) API_fire.js # Di-inline ke utils/dashboard-app.js
 |
 |-- styles/
 |   `-- main.css             # Custom CSS
 |
-|-- function/
-|   `-- ErrorBoundary.js     # Error handling
+|-- utils/
+|   `-- ui-common.js         # ErrorBoundary + Alert
 |
 |-- index.html               # Login page
 |-- regis.html               # Registration page
 |-- dashboard.html           # Dashboard page
-|-- app.js                   # Login app
-|-- regis-app.js             # Registration app
-|-- dashboard-app.js         # Dashboard app
+|-- utils/auth-app.js              # Login + Registration app
+|-- utils/dashboard-app.js         # Dashboard app
 |
-|-- login.php                # Login handler
-|-- register.php             # Registration handler
-|-- logout.php               # Logout handler
-|-- check_session.php        # Session validation
-|-- db.php                   # Database connection (PHP)
+|-- backend_web/login.php                # Login handler
+|-- backend_web/register.php             # Registration handler
+|-- backend_web/logout.php               # Logout handler
+|-- backend_web/check_session.php        # Session validation
+|-- backend_web/db.php                   # Database connection (PHP)
 |
 |-- .gitignore               # Git ignore rules
 |-- README.md                # This file

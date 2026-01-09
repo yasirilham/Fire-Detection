@@ -4,8 +4,8 @@
 // ==========================================
 
 const AUTH_API = {
-  CHECK: "check_session.php",
-  LOGOUT: "logout.php"
+  CHECK: "backend_web/check_session.php",
+  LOGOUT: "backend_web/logout.php"
 };
 
 /**
