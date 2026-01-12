@@ -6,7 +6,7 @@ def get_user_by_id(user_id: int):
     cursor = conn.cursor(dictionary=True)
 
     cursor.execute(
-        "SELECT id, name, location, chat_id FROM users WHERE id = %s LIMIT 1",
+        "SELECT id, name, location, chat_id, telegram_bot_token FROM users WHERE id = %s LIMIT 1",
         (user_id,)
     )
 

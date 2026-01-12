@@ -67,28 +67,15 @@ exit /b 0
 :ensure_env
 setlocal
 set "ENV_FILE=%~dp0backend\.env"
-set "TOKEN_FILE=%~dp0token_telegram.txt"
-
-set "BOT_TOKEN="
-if exist "%TOKEN_FILE%" (
-        set /p BOT_TOKEN=<"%TOKEN_FILE%"
-)
 
 (
     echo DB_HOST=localhost
     echo DB_USER=root
     echo DB_PASS=
     echo DB_NAME=fire_detect
-    echo TELEGRAM_BOT_TOKEN=%BOT_TOKEN%
     echo TELEGRAM_COOLDOWN=30
 ) > "%ENV_FILE%"
 
-if "%BG%"=="0" (
-    echo [INFO] backend\.env dibuat.
-    if "%BOT_TOKEN%"=="" (
-        echo [INFO] TELEGRAM_BOT_TOKEN kosong ^(Telegram nonaktif sampai token diisi^).
-        echo [INFO] Isi token di file: %TOKEN_FILE%
-    )
-)
+if "%BG%"=="0" echo [INFO] backend\.env dibuat.
 
 endlocal & exit /b 0

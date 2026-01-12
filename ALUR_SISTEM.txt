@@ -18,18 +18,14 @@ TUTORIAL SINGKAT (DARI AWAL SAMPAI BISA DIPAKAI)
 
 2) Siapkan token Telegram (opsional)
 Jika ingin fitur notifikasi Telegram aktif:
-1. Ambil token bot dari BotFather.
-2. Buat file teks bernama: token_telegram.txt (di root project)
-3. Isi 1 baris saja (tanpa spasi):
-	123456:ABCDEF...
-4. File token_telegram.txt TIDAK masuk GitHub (sudah di-ignore), jadi aman untuk dibagikan lewat Google Drive.
+1. Token diberikan oleh admin (tersimpan di file txt pada link Google Drive di atas).
+2. Token dimasukkan pada saat registrasi akun (kolom "Token Telegram").
 
 3) Setup backend (Python)
 1. Jalankan: setup_backend.bat
 	- Script akan membuat virtual environment (.venv)
 	- Install dependencies dari backend/requirements.txt
-	- Jika backend/.env belum ada, file tersebut dibuat otomatis
-	  (token Telegram akan dibaca dari token_telegram.txt kalau ada)
+	- Jika backend/.env belum ada, file tersebut dibuat otomatis (konfigurasi DB)
 
 4) Menyalakan backend deteksi
 Jalankan: start_backend.bat
@@ -50,6 +46,7 @@ TUTORIAL PENGGUNAAN WEB (ALUR PENGGUNA)
 
 1) Registrasi (regis.html)
 - Isi nama, username, password
+- Isi token Telegram (dari file txt admin) dan klik link Google Drive jika diperlukan
 - Isi chat_id (dari userinfobot)
 - Klik /start bot FireDA_bot, lalu centang konfirmasi
 - Isi alamat lengkap rumah
@@ -89,4 +86,4 @@ FITUR-FITUR WEB
 
 5) Notifikasi Telegram per-user
 - Telegram mengirim ke chat_id milik user (bukan chat_id global)
-- Token bot dibaca dari backend/.env (dibuat otomatis)
+- Token bot disimpan per-user di database (diisi saat registrasi)

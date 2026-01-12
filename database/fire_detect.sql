@@ -29,6 +29,7 @@ CREATE TABLE `users` (
   `password` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
   `location` text COLLATE utf8mb4_general_ci NOT NULL,
   `chat_id` varchar(64) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `telegram_bot_token` varchar(128) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `username` (`username`)
@@ -41,7 +42,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (1,'Arsyi','Arsyi12','$2y$10$7lLklG/IEF8.QvliJbQscuvGsyjui11UChU8QUIYbC.Uxwk6lJOgC','disitu deketnya ini dan sampingan itu nani kesini terus kesitu',NULL,'2025-12-30 14:40:01');
+INSERT INTO `users` VALUES (1,'Arsyi','Arsyi12','$2y$10$7lLklG/IEF8.QvliJbQscuvGsyjui11UChU8QUIYbC.Uxwk6lJOgC','disitu deketnya ini dan sampingan itu nani kesini terus kesitu',NULL,NULL,'2025-12-30 14:40:01');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;

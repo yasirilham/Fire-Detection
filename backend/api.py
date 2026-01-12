@@ -161,7 +161,15 @@ def status():
 
 @app.get("/telegram/status")
 def telegram_status_endpoint():
-    return telegram_status()
+    status = telegram_status()
+    token_ok = False
+    try:
+        if isinstance(active_user, dict):
+            token_ok = bool((active_user.get("telegram_bot_token") or "").strip())
+    except Exception:
+        token_ok = False
+    status["enabled"] = token_ok
+    return status
 
 @app.post("/control")
 def control(payload: dict):
@@ -288,13 +296,16 @@ async def detect(file: UploadFile = File(...)):
             logger.warning(f"🚨 KEBAKARAN | {detected_class} | {active_user['name']} | {max_conf:.2f}")
             
             # Telegram alert
-            if not telegram_enabled():
-                logger.info("[TELEGRAM] Skip (disabled / env not configured)")
-                telegram = {"status": "disabled"}
+            chat_id = None
+            bot_token = None
+            if isinstance(active_user, dict):
+                chat_id = active_user.get("chat_id")
+                bot_token = active_user.get("telegram_bot_token")
+
+            if not telegram_enabled(bot_token):
+                logger.info("[TELEGRAM] Skip (no bot_token)")
+                telegram = {"status": "no_bot_token"}
             else:
-                chat_id = None
-                if isinstance(active_user, dict):
-                    chat_id = active_user.get("chat_id")
 
                 if not (chat_id or "").strip():
                     logger.info("[TELEGRAM] Skip (no chat_id for user)")
@@ -336,8 +347,8 @@ async def detect(file: UploadFile = File(...)):
                 )
                 
                 try:
-                    msg_ok = send_message(message, chat_id=chat_id)
-                    photo_ok = send_photo(filename, chat_id=chat_id)
+                    msg_ok = send_message(message, chat_id=chat_id, bot_token=bot_token)
+                    photo_ok = send_photo(filename, chat_id=chat_id, bot_token=bot_token)
                     telegram = {
                         "status": "sent" if (msg_ok and photo_ok) else ("partial" if (msg_ok or photo_ok) else "error"),
                         "message": bool(msg_ok),

@@ -75,7 +75,7 @@ Download: https://git-scm.com/
 
 ### 4. Webcam (untuk deteksi real-time)
 
-### 5. Telegram Bot Token (Ada di file TXT pada Google Drive)
+### 5. Telegram Bot Token (diberikan admin)
 - Chat dengan [@BotFather](https://t.me/BotFather) di Telegram
 - Buat bot baru dengan `/newbot`
 - Simpan token yang diberikan
@@ -120,8 +120,8 @@ Library yang akan diinstall:
 Alternatif paling mudah (Windows): jalankan `setup_backend.bat` untuk membuat `.venv`, install dependencies, dan menyiapkan `backend/.env`.
 
 Alur `setup_backend.bat` (versi terbaru):
-- Jika `backend/.env` belum ada, script akan membuatnya otomatis.
-- Token Telegram tidak disimpan di GitHub. Jika ingin Telegram aktif, taruh token di file `token_telegram.txt` (1 baris saja) di root project sebelum menjalankan setup.
+- Jika `backend/.env` belum ada, script akan membuatnya otomatis (konfigurasi DB).
+- Token Telegram dimasukkan saat registrasi akun (kolom "Token Telegram") dan disimpan di database.
 - Setelah setup selesai, nyalakan backend dengan `start_backend.bat` atau masuk ke folder `backend` lalu jalankan `python api.py`.
 
 ### Step 3: Setup Database
@@ -147,16 +147,11 @@ CREATE DATABASE fire_detect;
 
 File `backend/.env` dibuat otomatis oleh `setup_backend.bat` / `start_backend.bat` jika belum ada.
 
-Jika ingin Telegram aktif:
-1. Ambil token dari BotFather.
-2. Buat file `token_telegram.txt` di root project (sejajar dengan `start_backend.bat`).
-3. Isi 1 baris saja dengan token Telegram:
-   `123456:ABCDEF...`
-
-Catatan:
-- `token_telegram.txt` sudah masuk `.gitignore` (tidak ikut GitHub) dan bisa dibagikan via Google Drive.
+Konfigurasi Telegram:
+- Token Telegram diberikan admin (mis. via file txt di Google Drive).
+- Token dimasukkan saat registrasi akun (kolom "Token Telegram") dan disimpan di database.
 - Sistem Telegram pada project ini tidak memakai `TELEGRAM_CHAT_ID` lagi.
-- Tujuan: chat_id Telegram sekarang per-user (diisi saat registrasi).
+- chat_id Telegram sekarang per-user (diisi saat registrasi).
 
 ### Step 5: Verifikasi Model YOLOv8
 
@@ -204,7 +199,6 @@ DB_PASS=
 DB_NAME=fire_detect
 
 # Telegram
-TELEGRAM_BOT_TOKEN=
 TELEGRAM_COOLDOWN=30
 ```
 
@@ -431,7 +425,7 @@ Solusi:
 Error: Silent (tidak ada error, tapi notifikasi tidak masuk)
 
 Solusi:
-1. Cek `TELEGRAM_BOT_TOKEN` dan `TELEGRAM_CHAT_ID` di `.env`
+1. Pastikan user sudah mengisi "Token Telegram" dan chat_id saat registrasi
 2. Test bot dengan chat langsung
 3. Pastikan bot tidak di-block
 4. Cek log di `backend/logs/detection_*.log`

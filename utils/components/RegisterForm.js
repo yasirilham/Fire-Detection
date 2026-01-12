@@ -2,6 +2,7 @@ function RegisterForm({ onLoginClick, showAlert }) {
   const [name, setName] = React.useState("");
   const [username, setUsername] = React.useState("");
   const [password, setPassword] = React.useState("");
+  const [telegramToken, setTelegramToken] = React.useState("");
   const [chatId, setChatId] = React.useState("");
   const [hasStartedBot, setHasStartedBot] = React.useState(false);
   const [location, setLocation] = React.useState("");
@@ -9,8 +10,13 @@ function RegisterForm({ onLoginClick, showAlert }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!name || !username || !password || !chatId || !location) {
+    if (!name || !username || !password || !telegramToken || !chatId || !location) {
       showAlert("Semua field wajib diisi", "error");
+      return;
+    }
+
+    if (!/^\d+:[A-Za-z0-9_-]{20,}$/.test(telegramToken.trim())) {
+      showAlert("Format token Telegram tidak valid", "error");
       return;
     }
 
@@ -30,6 +36,7 @@ function RegisterForm({ onLoginClick, showAlert }) {
       formData.append("name", name);
       formData.append("username", username);
       formData.append("password", password);
+      formData.append("telegram_token", telegramToken.trim());
       formData.append("chat_id", chatId.trim());
       formData.append("has_started_bot", hasStartedBot ? "1" : "0");
       formData.append("location", location);
@@ -98,6 +105,32 @@ function RegisterForm({ onLoginClick, showAlert }) {
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Password"
         />
+      </div>
+
+      {/* Telegram Bot Token (dari admin) */}
+      <div>
+        <label className="block text-sm font-medium mb-1">
+          Token Telegram
+        </label>
+        <input
+          type="password"
+          className="input-field"
+          value={telegramToken}
+          onChange={(e) => setTelegramToken(e.target.value)}
+          placeholder="Contoh: 123456:ABCDEF..."
+          autoComplete="off"
+        />
+        <p className="mt-2 text-xs text-gray-600">
+          Masukkan token yang telah diberikan admin di file txt. Link folder Google Drive:{" "}
+          <a
+            href="https://drive.google.com/drive/folders/1IMXcdK6cZcv8W3cUfu5xhxGhZvV5vqXe?usp=drive_link"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-red-600 font-medium hover:underline"
+          >
+            https://drive.google.com/drive/folders/1IMXcdK6cZcv8W3cUfu5xhxGhZvV5vqXe?usp=drive_link
+          </a>
+        </p>
       </div>
 
       {/* Telegram Chat ID */}

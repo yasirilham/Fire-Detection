@@ -85,4 +85,21 @@ try {
 } catch (Throwable $e) {
     // Best-effort migration; do not block app startup.
 }
+
+// ---- Lightweight migration: ensure users.telegram_bot_token exists ----
+try {
+    $checkSql = "SELECT COUNT(*) AS cnt FROM information_schema.COLUMNS\n"
+        . "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'telegram_bot_token'";
+    $res = $conn->query($checkSql);
+    if ($res) {
+        $row = $res->fetch_assoc();
+        $cnt = isset($row['cnt']) ? (int)$row['cnt'] : 0;
+        $res->free();
+        if ($cnt === 0) {
+            $conn->query("ALTER TABLE users ADD COLUMN telegram_bot_token VARCHAR(128) NULL AFTER chat_id");
+        }
+    }
+} catch (Throwable $e) {
+    // Best-effort migration; do not block app startup.
+}
 ?>

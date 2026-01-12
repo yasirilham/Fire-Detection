@@ -5,28 +5,20 @@ import requests
 from dotenv import load_dotenv
 
 load_dotenv()
-
-BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 try:
     COOLDOWN = int(os.getenv("TELEGRAM_COOLDOWN", "30"))
 except ValueError:
     COOLDOWN = 30
 
-_configured = bool(BOT_TOKEN)
-
 if os.getenv("TELEGRAM_DEBUG") == "1":
-    print("[TELEGRAM_DEBUG] BOT_TOKEN configured:", bool(BOT_TOKEN))
     print("[TELEGRAM_DEBUG] COOLDOWN:", COOLDOWN)
-
-if not _configured:
-    # Jangan bocorkan token/chat id; cukup beri tahu status.
-    print("[TELEGRAM] disabled (token not configured)")
 
 _last_sent = 0
 
 
-def is_enabled() -> bool:
-    return _configured
+def is_enabled(bot_token: str | None = None) -> bool:
+    token = (bot_token or "").strip() if bot_token is not None else ""
+    return bool(token)
 
 
 def get_status() -> dict:
@@ -35,15 +27,12 @@ def get_status() -> dict:
     if _last_sent:
         seconds_since_last = max(0, int(now - _last_sent))
     return {
-        "enabled": bool(_configured),
         "cooldown": int(COOLDOWN),
         "seconds_since_last": seconds_since_last,
     }
 
 def can_send():
     global _last_sent
-    if not _configured:
-        return False
     now = time.time()
     if now - _last_sent >= COOLDOWN:
         _last_sent = now
@@ -55,16 +44,17 @@ def _resolve_chat_id(chat_id: str | None) -> str | None:
     return cid if cid else None
 
 
-def send_message(text: str, chat_id: str | None = None):
-    if not _configured:
-        print("[TELEGRAM] send_message skipped (disabled)")
+def send_message(text: str, chat_id: str | None = None, bot_token: str | None = None):
+    token = (bot_token or "").strip() if bot_token is not None else ""
+    if not token:
+        print("[TELEGRAM] send_message skipped (no bot_token)")
         return False
 
     resolved = _resolve_chat_id(chat_id)
     if not resolved:
         print("[TELEGRAM] send_message skipped (no chat_id)")
         return False
-    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
     payload = {
         "chat_id": resolved,
         "text": text
@@ -86,16 +76,17 @@ def send_message(text: str, chat_id: str | None = None):
         return False
 
 
-def send_photo(image_path: str, chat_id: str | None = None):
-    if not _configured:
-        print("[TELEGRAM] send_photo skipped (disabled)")
+def send_photo(image_path: str, chat_id: str | None = None, bot_token: str | None = None):
+    token = (bot_token or "").strip() if bot_token is not None else ""
+    if not token:
+        print("[TELEGRAM] send_photo skipped (no bot_token)")
         return False
 
     resolved = _resolve_chat_id(chat_id)
     if not resolved:
         print("[TELEGRAM] send_photo skipped (no chat_id)")
         return False
-    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto"
+    url = f"https://api.telegram.org/bot{token}/sendPhoto"
 
     try:
         with open(image_path, "rb") as f:
