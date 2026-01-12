@@ -30,6 +30,10 @@ backend/screenshots/
 
 # Environment files
 
+# Do not commit secrets
+backend/.env
+.env
+
 
 .env.local
 .env.development.local
