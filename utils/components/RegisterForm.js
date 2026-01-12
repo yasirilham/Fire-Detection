@@ -121,14 +121,14 @@ function RegisterForm({ onLoginClick, showAlert }) {
           autoComplete="off"
         />
         <p className="mt-2 text-xs text-gray-600">
-          Masukkan token yang telah diberikan admin di file txt. Link folder Google Drive:{" "}
+          masukan token yang ada di README.txt{" "}
           <a
             href="https://drive.google.com/drive/folders/1IMXcdK6cZcv8W3cUfu5xhxGhZvV5vqXe?usp=drive_link"
             target="_blank"
             rel="noopener noreferrer"
             className="text-red-600 font-medium hover:underline"
           >
-            https://drive.google.com/drive/folders/1IMXcdK6cZcv8W3cUfu5xhxGhZvV5vqXe?usp=drive_link
+            di sini
           </a>
         </p>
       </div>
