@@ -22,6 +22,12 @@ if "%BG%"=="0" (
 REM Pindah ke folder dimana file bat ini berada
 cd /d "%~dp0"
 
+REM Pastikan backend/.env tersedia (dibuat otomatis jika belum ada)
+if not exist "backend\.env" (
+    if "%BG%"=="0" echo [INFO] File backend\.env belum ada, membuat konfigurasi default...
+    call :ensure_env
+)
+
 REM Cek apakah virtual environment ada
 if not exist ".venv\Scripts\activate.bat" (
     echo [ERROR] Virtual environment tidak ditemukan!
@@ -55,3 +61,34 @@ if "%BG%"=="0" (
 python api.py
 
 if "%BG%"=="0" pause
+
+exit /b 0
+
+:ensure_env
+setlocal
+set "ENV_FILE=%~dp0backend\.env"
+set "TOKEN_FILE=%~dp0token_telegram.txt"
+
+set "BOT_TOKEN="
+if exist "%TOKEN_FILE%" (
+        set /p BOT_TOKEN=<"%TOKEN_FILE%"
+)
+
+(
+    echo DB_HOST=localhost
+    echo DB_USER=root
+    echo DB_PASS=
+    echo DB_NAME=fire_detect
+    echo TELEGRAM_BOT_TOKEN=%BOT_TOKEN%
+    echo TELEGRAM_COOLDOWN=30
+) > "%ENV_FILE%"
+
+if "%BG%"=="0" (
+    echo [INFO] backend\.env dibuat.
+    if "%BOT_TOKEN%"=="" (
+        echo [INFO] TELEGRAM_BOT_TOKEN kosong ^(Telegram nonaktif sampai token diisi^).
+        echo [INFO] Isi token di file: %TOKEN_FILE%
+    )
+)
+
+endlocal & exit /b 0

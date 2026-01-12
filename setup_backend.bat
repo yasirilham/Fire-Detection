@@ -8,21 +8,13 @@ echo =====================================
 REM Pindah ke folder root project
 cd /d "%~dp0"
 
-REM Jika .env belum ada, arahkan user ambil dari Google Drive lalu hentikan setup
+REM Jika backend/.env belum ada, buat otomatis.
+REM Token Telegram bisa ditaruh di file token_telegram.txt (di root project) agar tidak ikut GitHub.
 if not exist "backend\.env" (
   echo =====================================
-  echo [ACTION REQUIRED] File backend\.env belum ada.
-  echo Setup dihentikan agar bisa dijalankan ulang dari awal.
-  echo.
-  echo 1. Download file .env dari Google Drive berikut:
-  echo    https://drive.google.com/drive/folders/1IMXcdK6cZcv8W3cUfu5xhxGhZvV5vqXe?usp=drive_link
-  echo 2. Taruh file itu di: %~dp0backend\.env
-  echo 3. Tutup window ini, lalu jalankan ulang: setup_backend.bat
+  echo [INFO] File backend\.env belum ada, membuat konfigurasi default...
   echo =====================================
-  echo.
-  start "" "https://drive.google.com/drive/folders/1IMXcdK6cZcv8W3cUfu5xhxGhZvV5vqXe?usp=drive_link"
-  pause
-  exit /b 2
+  call :ensure_env
 )
 
 REM Pastikan Python tersedia
@@ -63,3 +55,34 @@ echo - start_backend.bat
 echo atau
 echo - cd backend lalu: python api.py
 pause
+
+exit /b 0
+
+:ensure_env
+setlocal
+set "ENV_FILE=%~dp0backend\.env"
+set "TOKEN_FILE=%~dp0token_telegram.txt"
+
+set "BOT_TOKEN="
+if exist "%TOKEN_FILE%" (
+  set /p BOT_TOKEN=<"%TOKEN_FILE%"
+)
+
+(
+  echo DB_HOST=localhost
+  echo DB_USER=root
+  echo DB_PASS=
+  echo DB_NAME=fire_detect
+  echo TELEGRAM_BOT_TOKEN=%BOT_TOKEN%
+  echo TELEGRAM_COOLDOWN=30
+) > "%ENV_FILE%"
+
+echo [INFO] backend\.env dibuat.
+if "%BOT_TOKEN%"=="" (
+  echo [INFO] TELEGRAM_BOT_TOKEN kosong ^(Telegram nonaktif sampai token diisi^).
+  echo [INFO] Isi token di file: %TOKEN_FILE%
+  echo [INFO] Link Google Drive (file token):
+  echo https://drive.google.com/drive/folders/1IMXcdK6cZcv8W3cUfu5xhxGhZvV5vqXe?usp=drive_link
+)
+
+endlocal & exit /b 0

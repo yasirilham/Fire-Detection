@@ -75,7 +75,7 @@ Download: https://git-scm.com/
 
 ### 4. Webcam (untuk deteksi real-time)
 
-### 5. Telegram Bot Token (Ada di file ".env" pada Google Drive)
+### 5. Telegram Bot Token (Ada di file TXT pada Google Drive)
 - Chat dengan [@BotFather](https://t.me/BotFather) di Telegram
 - Buat bot baru dengan `/newbot`
 - Simpan token yang diberikan
@@ -119,9 +119,9 @@ Library yang akan diinstall:
 
 Alternatif paling mudah (Windows): jalankan `setup_backend.bat` untuk membuat `.venv`, install dependencies, dan menyiapkan `backend/.env`.
 
-Alur `setup_backend.bat`:
-- Jika `backend/.env` belum ada, script akan membuka link Google Drive, lalu berhenti. Download file `.env`, taruh ke `backend/.env`, lalu jalankan ulang `setup_backend.bat`.
-- Jika `backend/.env` sudah ada, script lanjut install dependencies dan setup selesai.
+Alur `setup_backend.bat` (versi terbaru):
+- Jika `backend/.env` belum ada, script akan membuatnya otomatis.
+- Token Telegram tidak disimpan di GitHub. Jika ingin Telegram aktif, taruh token di file `token_telegram.txt` (1 baris saja) di root project sebelum menjalankan setup.
 - Setelah setup selesai, nyalakan backend dengan `start_backend.bat` atau masuk ke folder `backend` lalu jalankan `python api.py`.
 
 ### Step 3: Setup Database
@@ -145,33 +145,18 @@ CREATE DATABASE fire_detect;
 
 ### Step 4: Konfigurasi Environment Variables
 
-1. Buat file `.env` di folder `backend/`
+File `backend/.env` dibuat otomatis oleh `setup_backend.bat` / `start_backend.bat` jika belum ada.
 
-```bash
-cd backend
-```
-
-2. Isi file `.env` (copy template di bawah):
-
-Catatan:
-- Jangan upload `backend/.env` ke GitHub.
-- Untuk hasil 1:1 seperti laptop ini, ambil file `backend/.env` dari Google Drive lalu taruh di folder `backend/`.
-
-```env
-# Database Configuration
-DB_HOST=localhost
-DB_USER=root
-DB_PASS=
-DB_NAME=fire_detect
-
-# Telegram Configuration (samakan dengan yang ada di ".env")
-TELEGRAM_BOT_TOKEN=YOUR_BOT_TOKEN_HERE
-TELEGRAM_CHAT_ID=YOUR_CHAT_ID_HERE
-TELEGRAM_COOLDOWN=15
-```
+Jika ingin Telegram aktif:
+1. Ambil token dari BotFather.
+2. Buat file `token_telegram.txt` di root project (sejajar dengan `start_backend.bat`).
+3. Isi 1 baris saja dengan token Telegram:
+   `123456:ABCDEF...`
 
 Catatan:
-- `TELEGRAM_COOLDOWN` adalah jeda minimal antar notifikasi Telegram (dalam detik) untuk mencegah spam.
+- `token_telegram.txt` sudah masuk `.gitignore` (tidak ikut GitHub) dan bisa dibagikan via Google Drive.
+- Sistem Telegram pada project ini tidak memakai `TELEGRAM_CHAT_ID` lagi.
+- Tujuan: chat_id Telegram sekarang per-user (diisi saat registrasi).
 
 ### Step 5: Verifikasi Model YOLOv8
 
@@ -217,6 +202,10 @@ DB_HOST=localhost
 DB_USER=root
 DB_PASS=
 DB_NAME=fire_detect
+
+# Telegram
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_COOLDOWN=30
 ```
 
 ### 3. Frontend Settings (`utils/dashboard-app.js`)

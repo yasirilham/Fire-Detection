@@ -1,74 +1,92 @@
 ALUR SISTEM – FIRE DETECTION SYSTEM
 
-Sistem Fire Detection System adalah aplikasi pemantauan api dan asap berbasis kamera yang bekerja secara real-time. Pengguna berinteraksi melalui halaman web, lalu sistem memproses video dari webcam menggunakan kecerdasan buatan (model YOLO) di backend Python, dan akan mengirim peringatan (termasuk bukti screenshot) lewat Telegram saat tingkat keyakinan deteksi sudah melewati ambang batas.
+Link Google Drive (paket pendukung / token Telegram):
+https://drive.google.com/drive/folders/1IMXcdK6cZcv8W3cUfu5xhxGhZvV5vqXe?usp=drive_link
 
-1) Persiapan awal (sekali di awal penggunaan)
-Saat sistem pertama kali disiapkan, panduan utama ada di system pada "README.md". Di tahap ini, komponen backend Python perlu dipersiapkan agar bisa melakukan deteksi. Script "setup_backend.bat" digunakan untuk membuat virtual environment dan memasang library yang dibutuhkan berdasarkan daftar di "backend/requirements.txt".
-Untuk data pengguna (akun login), sistem menggunakan database MySQL. Struktur tabelnya disediakan di "database/fire_detect.sql" dan penjelasan ringkasnya ada di "database/README.md". Pada sisi web/PHP, system pada "backend_web/db.php" bertugas menghubungkan aplikasi ke MySQL. Menariknya, jika database belum ada, "backend_web/db.php" juga dapat membuat database dan mengimpor schema dari "database/fire_detect.sql" secara otomatis.
-Di sisi backend Python, koneksi ke database dibaca dari konfigurasi lingkungan (environment). System pada "backend/db.py" memuat fungsi koneksi MySQL, dan nilai host/user/password/database diambil dari "backend/.env". System pada "backend/.env" juga menyimpan konfigurasi Telegram (token bot, chat id, dan cooldown), sehingga sistem bisa mengirim notifikasi.
+token telegram :
 
-2) Pengguna membuka halaman login
-Pengalaman pengguna dimulai ketika membuka "index.html" melalui browser. Halaman ini menampilkan antarmuka login yang ramah pengguna dan menggunakan komponen UI dari system pada "styles/main.css" untuk tampilan visual.
+=====================================================
+TUTORIAL SINGKAT (DARI AWAL SAMPAI BISA DIPAKAI)
+=====================================================
 
-Logika halaman login dirangkai oleh beberapa system pada JavaScript:
-- "utils/auth-app.js" sebagai pusat aplikasi login (React app) yang mengatur interaksi tombol dan perpindahan halaman.
-- "utils/components/LoginForm.js" sebagai form input username dan password.
-- "utils/ui-common.js" untuk komponen pendukung seperti notifikasi (alert) dan penanganan error.
-- "utils/auth.js" sebagai helper autentikasi berbasis session (menggunakan PHP).
+1) Persiapan awal (sekali di awal)
+1. Install Laragon / XAMPP (untuk Apache + MySQL).
+2. Install Python 3.8+.
+3. Pastikan project berada di folder web server (contoh Laragon):
+	C:\laragon\www\firedetec
+4. Jalankan MySQL dan Apache dari Laragon/XAMPP.
 
-3) Backend deteksi bisa dinyalakan otomatis dari halaman login
-Sebelum pengguna masuk ke dashboard, backend Python perlu aktif agar deteksi bisa berjalan. Sistem menyediakan mekanisme “auto-start”: ketika pengguna menekan tombol login awal, "utils/auth-app.js" akan mencoba memanggil "backend_web/start_backend.php".
+2) Siapkan token Telegram (opsional)
+Jika ingin fitur notifikasi Telegram aktif:
+1. Ambil token bot dari BotFather.
+2. Buat file teks bernama: token_telegram.txt (di root project)
+3. Isi 1 baris saja (tanpa spasi):
+	123456:ABCDEF...
+4. File token_telegram.txt TIDAK masuk GitHub (sudah di-ignore), jadi aman untuk dibagikan lewat Google Drive.
 
-System pada "backend_web/start_backend.php" akan mengecek apakah backend sudah berjalan dengan memanggil endpoint status backend. Jika backend belum jalan, system pada ini akan mengeksekusi "start_backend.bat" dalam mode background agar server backend Python menyala tanpa mengganggu tampilan web.
-Kemudian "start_backend.bat" akan mengaktifkan virtual environment dan menjalankan "backend/api.py". System pada "backend/api.py" adalah pusat layanan deteksi (FastAPI) yang membuka server pada alamat lokal, sehingga browser dapat mengirim frame kamera ke backend.
-4) Pengguna login dengan akun yang tersimpan di database
-Saat pengguna mengisi form dan menekan submit, "utils/components/LoginForm.js" akan mengirim data login ke "backend_web/login.php".
+3) Setup backend (Python)
+1. Jalankan: setup_backend.bat
+	- Script akan membuat virtual environment (.venv)
+	- Install dependencies dari backend/requirements.txt
+	- Jika backend/.env belum ada, file tersebut dibuat otomatis
+	  (token Telegram akan dibaca dari token_telegram.txt kalau ada)
 
-System pada "backend_web/login.php" memvalidasi username dan password terhadap tabel users di database MySQL melalui koneksi yang disediakan "backend_web/db.php". Jika login berhasil, "backend_web/login.php" akan menyimpan data pengguna ke dalam PHP session, sehingga status login dapat dikenali untuk halaman berikutnya.
+4) Menyalakan backend deteksi
+Jalankan: start_backend.bat
+Backend FastAPI akan berjalan di:
+http://127.0.0.1:8000
 
-Setelah itu, pengguna diarahkan ke "dashboard.html".
+5) Menjalankan web
+1. Buka index.html lewat browser (via Apache/Laragon).
+2. Login atau registrasi akun.
+	- Saat registrasi, user diminta memasukkan chat_id Telegram sendiri.
+	- Ambil chat_id lewat: https://t.me/userinfobot
+	- User WAJIB /start ke bot dulu: https://t.me/FireDA_bot
+3. Setelah login, masuk dashboard, izinkan akses kamera, lalu klik Mulai Deteksi.
 
-5) Dashboard memverifikasi sesi login
-Ketika "dashboard.html" dibuka, aplikasi dashboard memanggil helper autentikasi di "utils/auth.js" untuk memastikan pengguna benar-benar sudah login. Verifikasi ini dilakukan dengan memanggil "backend_web/check_session.php".
+=====================================================
+TUTORIAL PENGGUNAAN WEB (ALUR PENGGUNA)
+=====================================================
 
-System pada "backend_web/check_session.php" memeriksa apakah PHP session berisi data user. Jika sesi valid, dashboard bisa menampilkan informasi user dan mengizinkan penggunaan fitur deteksi. Jika sesi tidak valid (misalnya user belum login atau sesi habis), sistem akan mengarahkan kembali ke "index.html".
+1) Registrasi (regis.html)
+- Isi nama, username, password
+- Isi chat_id (dari userinfobot)
+- Klik /start bot FireDA_bot, lalu centang konfirmasi
+- Isi alamat lengkap rumah
 
-6) Pengguna memulai deteksi dan memberi izin kamera
-Di halaman dashboard, logika utama berada pada "utils/dashboard-app.js". Ketika pengguna menekan tombol “Mulai Deteksi”, aplikasi akan meminta izin akses webcam dari browser. Setelah kamera aktif, dashboard mengirim perintah start ke backend melalui endpoint kontrol.
+2) Login (index.html)
+- Masukkan username + password
+- Sistem akan menyalakan backend otomatis (melalui backend_web/start_backend.php)
 
-Permintaan kontrol ini dikirim dari "utils/dashboard-app.js" ke backend yang berjalan di "backend/api.py" lewat endpoint kontrol (control). Di sini backend menandai sistem dalam keadaan aktif, dan mengaitkan sesi deteksi dengan pengguna yang sedang login.
+3) Dashboard (dashboard.html)
+- Klik Mulai Deteksi
+- Browser meminta izin webcam
+- Sistem mengirim frame kamera secara berkala ke backend
 
-Untuk mengambil detail pengguna (seperti nama dan alamat yang akan dipakai dalam pesan peringatan), "backend/api.py" memanggil "backend/user_service.py". Lalu "backend/user_service.py" mengakses database melalui "backend/db.py".
+4) Notifikasi
+- Jika confidence melewati threshold, alarm berbunyi dan sistem mengirim notifikasi Telegram
+- Notifikasi berisi nama pemilik, alamat, jenis (Fire/Smoke), confidence, waktu, dan screenshot
 
-7) Pengiriman frame video ke backend untuk dianalisis
-Setelah deteksi aktif, "utils/dashboard-app.js" secara berkala mengambil frame dari video webcam (snapshot) dan mengirimkannya ke backend melalui endpoint deteksi.
+=====================================================
+FITUR-FITUR WEB
+=====================================================
 
-Di backend, system pada "backend/api.py" menerima frame, lalu memprosesnya menggunakan model YOLO yang disimpan di "models/best.pt". Sistem ini tidak sekadar mendeteksi sekali; ia memakai beberapa mekanisme untuk meningkatkan kualitas:
-- Mengurangi noise dengan batas area minimal.
-- Menggunakan stabilisasi beberapa frame untuk memastikan deteksi tidak “kedip-kedip”.
-- Menggunakan motion detection agar objek statis (misalnya tembok) tidak terlalu mudah menimbulkan false positive.
+1) Autentikasi user
+- Registrasi & login (PHP + session)
+- Data user tersimpan di MySQL
 
-8) Tampilan hasil deteksi, alarm, dan pencatatan
-Hasil analisis dari "backend/api.py" dikembalikan ke "utils/dashboard-app.js" dalam bentuk informasi: apakah terdeteksi api/asap, berapa confidence (tingkat keyakinan), dan kelas yang terdeteksi.
+2) Deteksi api/asap real-time
+- YOLOv8 + preprocessing (fire vs smoke)
+- Motion detection untuk mengurangi false positive objek statis
+- Temporal stabilization untuk mengurangi deteksi “kedip-kedip”
 
-Jika confidence tinggi, dashboard akan membunyikan alarm menggunakan system pada audio "assets/Alarm1.mp3". Pada saat yang sama, sistem juga membuat catatan log dan menyimpan screenshot sebagai bukti.
+3) Alarm lokal
+- Alarm berbunyi di browser saat deteksi high confidence
 
-System pada log disimpan di folder "backend/logs/" dan screenshot disimpan di folder "backend/screenshots/" (folder ini dibuat otomatis saat backend berjalan).
+4) Log & screenshot
+- Log tersimpan di backend/logs/
+- Screenshot bukti tersimpan di backend/screenshots/
 
-9) Pengiriman notifikasi Telegram saat kondisi serius
-Jika deteksi memenuhi syarat notifikasi, "backend/api.py" akan memanggil layanan Telegram yang berada di "backend/telegram_service.py".
-
-System pada "backend/telegram_service.py" membaca token bot dan chat id dari "backend/.env", lalu mengirim pesan dan foto (screenshot) ke Telegram. Untuk mencegah spam, ada mekanisme cooldown sehingga notifikasi tidak dikirim terus-menerus dalam waktu yang terlalu berdekatan.
-
-Dashboard juga bisa menampilkan status Telegram dengan memanggil endpoint status Telegram yang disediakan oleh "backend/api.py".
-
-10) Pengguna menghentikan deteksi atau logout
-Jika pengguna menekan tombol stop, "utils/dashboard-app.js" mengirim perintah stop ke backend pada "backend/api.py" sehingga proses deteksi dihentikan.
-
-Jika pengguna memilih logout, dashboard melakukan dua hal:
-- Mematikan backend (shutdown) dengan memanggil endpoint shutdown di "backend/api.py".
-- Menghapus sesi login dengan memanggil "backend_web/logout.php" melalui helper di "utils/auth.js".
-
-System pada "backend_web/logout.php" menghancurkan (destroy) PHP session. Setelah logout, pengguna diarahkan kembali ke "index.html".
-
-Ringkasnya, sistem ini menggabungkan antarmuka web yang mudah dipakai, autentikasi berbasis database dan session, pemrosesan video real-time dengan model AI, alarm lokal, serta notifikasi Telegram sebagai peringatan cepat ketika terdeteksi potensi kebakaran.
+5) Notifikasi Telegram per-user
+- Telegram mengirim ke chat_id milik user (bukan chat_id global)
+- Token bot dibaca dari backend/.env (dibuat otomatis)
