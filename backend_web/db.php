@@ -66,4 +66,23 @@ if ($conn->connect_error) {
 }
 
 $conn->set_charset("utf8mb4");
+
+// ---- Lightweight migration: ensure users.chat_id exists ----
+// This keeps existing installs working even if the database was created
+// before we introduced the chat_id field.
+try {
+    $checkSql = "SELECT COUNT(*) AS cnt FROM information_schema.COLUMNS\n"
+        . "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'chat_id'";
+    $res = $conn->query($checkSql);
+    if ($res) {
+        $row = $res->fetch_assoc();
+        $cnt = isset($row['cnt']) ? (int)$row['cnt'] : 0;
+        $res->free();
+        if ($cnt === 0) {
+            $conn->query("ALTER TABLE users ADD COLUMN chat_id VARCHAR(64) NULL AFTER location");
+        }
+    }
+} catch (Throwable $e) {
+    // Best-effort migration; do not block app startup.
+}
 ?>

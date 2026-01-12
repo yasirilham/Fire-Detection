@@ -2,13 +2,26 @@ function RegisterForm({ onLoginClick, showAlert }) {
   const [name, setName] = React.useState("");
   const [username, setUsername] = React.useState("");
   const [password, setPassword] = React.useState("");
+  const [chatId, setChatId] = React.useState("");
+  const [hasStartedBot, setHasStartedBot] = React.useState(false);
   const [location, setLocation] = React.useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!name || !username || !password || !location) {
+    if (!name || !username || !password || !chatId || !location) {
       showAlert("Semua field wajib diisi", "error");
+      return;
+    }
+
+    // chat_id biasanya numerik dari @userinfobot; bisa negatif untuk grup.
+    if (!/^-?\d+$/.test(chatId.trim())) {
+      showAlert("Format chat_id tidak valid. Ambil chat_id numerik dari @userinfobot", "error");
+      return;
+    }
+
+    if (!hasStartedBot) {
+      showAlert("Klik /start ke bot Telegram dulu, lalu centang konfirmasi", "error");
       return;
     }
 
@@ -17,6 +30,8 @@ function RegisterForm({ onLoginClick, showAlert }) {
       formData.append("name", name);
       formData.append("username", username);
       formData.append("password", password);
+      formData.append("chat_id", chatId.trim());
+      formData.append("has_started_bot", hasStartedBot ? "1" : "0");
       formData.append("location", location);
 
       const res = await fetch("backend_web/register.php", {
@@ -83,6 +98,59 @@ function RegisterForm({ onLoginClick, showAlert }) {
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Password"
         />
+      </div>
+
+      {/* Telegram Chat ID */}
+      <div>
+        <label className="block text-sm font-medium mb-1">
+          Telegram chat_id
+        </label>
+        <input
+          type="text"
+          className="input-field"
+          value={chatId}
+          onChange={(e) => setChatId(e.target.value)}
+          placeholder="Contoh: 6339045546"
+          inputMode="numeric"
+        />
+        <p className="mt-2 text-xs text-gray-600">
+          Dapatkan chat_id lewat{" "}
+          <a
+            href="https://t.me/userinfobot"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-red-600 font-medium hover:underline"
+          >
+            https://t.me/userinfobot
+          </a>
+        </p>
+      </div>
+
+      {/* Konfirmasi /start bot */}
+      <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+        <p className="text-sm text-gray-700 mb-3">
+          Sebelum lanjut, lakukan{" "}
+          <span className="font-medium">/start</span> ke bot Telegram terlebih dahulu:{" "}
+          <a
+            href="https://t.me/FireDA_bot"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-red-600 font-medium hover:underline"
+          >
+            t.me/FireDA_bot
+          </a>
+        </p>
+        <label className="flex items-start gap-3 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            className="mt-1"
+            checked={hasStartedBot}
+            onChange={(e) => setHasStartedBot(e.target.checked)}
+          />
+          <span className="text-sm text-gray-800">
+            Saya sudah melakukan /start dan siap menerima notifikasi.
+          </span>
+        </label>
       </div>
 
       {/* Alamat Lengkap Rumah */}

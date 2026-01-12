@@ -27,3 +27,11 @@ backend/logs/
 
 # Runtime screenshots
 backend/screenshots/
+
+# Environment files
+
+
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local

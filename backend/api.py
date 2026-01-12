@@ -43,6 +43,22 @@ logging.basicConfig(
 )
 logger = logging.getLogger("FireDetection")
 
+# ============================================================
+# YOLO CLASS MAPPING
+# - Keep mapping explicit for future-proofing.
+# - Background is listed for reference but intentionally ignored by detection logic.
+# ============================================================
+
+CLASS_FIRE = 0
+CLASS_SMOKE = 1
+CLASS_BACKGROUND = 2
+
+CLASS_NAMES = {
+    CLASS_FIRE: "Fire",
+    CLASS_SMOKE: "Smoke",
+    CLASS_BACKGROUND: "Background",
+}
+
 # Threshold
 # Lebih sensitif untuk objek kecil, tapi notif tetap dikunci oleh NOTIFY_*
 CONF_FIRE = 0.45
@@ -119,8 +135,9 @@ def extract_candidates(results, target_class, conf_threshold, area_threshold):
         area = float((x2 - x1) * (y2 - y1))
         
         if cls == target_class and conf >= conf_threshold and area >= area_threshold:
+            label = CLASS_NAMES.get(cls, f"Unknown({cls})")
             candidates.append({
-                "class": "Fire" if cls == 0 else "Smoke",
+                "class": label,
                 "confidence": conf,
                 "area": area,
                 "box": (x1, y1, x2, y2)
@@ -211,8 +228,9 @@ async def detect(file: UploadFile = File(...)):
     results_smoke = model(frame_smoke, conf=0.10, imgsz=640, verbose=False)
     
     # Extract candidates
-    fire_cands = extract_candidates(results_fire, 0, CONF_FIRE, MIN_AREA_FIRE)
-    smoke_cands = extract_candidates(results_smoke, 1, CONF_SMOKE, MIN_AREA_SMOKE)
+    # Note: Background (CLASS_BACKGROUND) di abaikan karena bukan termasuk kedalam system.
+    fire_cands = extract_candidates(results_fire, CLASS_FIRE, CONF_FIRE, MIN_AREA_FIRE)
+    smoke_cands = extract_candidates(results_smoke, CLASS_SMOKE, CONF_SMOKE, MIN_AREA_SMOKE)
     
     # Priority logic: Fire > Smoke
     detected_class = None
@@ -273,10 +291,37 @@ async def detect(file: UploadFile = File(...)):
             if not telegram_enabled():
                 logger.info("[TELEGRAM] Skip (disabled / env not configured)")
                 telegram = {"status": "disabled"}
-            elif not can_send():
-                logger.info("[TELEGRAM] Skip (cooldown)")
-                telegram = {"status": "cooldown"}
             else:
+                chat_id = None
+                if isinstance(active_user, dict):
+                    chat_id = active_user.get("chat_id")
+
+                if not (chat_id or "").strip():
+                    logger.info("[TELEGRAM] Skip (no chat_id for user)")
+                    telegram = {"status": "no_chat_id"}
+                    return {
+                        "fire": fire_detected,
+                        "confidence": max_conf,
+                        "detected_class": detected_class,
+                        "should_notify": should_notify,
+                        "telegram": telegram,
+                        "time": time.strftime("%H:%M:%S"),
+                        "user": active_user
+                    }
+
+                if not can_send():
+                    logger.info("[TELEGRAM] Skip (cooldown)")
+                    telegram = {"status": "cooldown"}
+                    return {
+                        "fire": fire_detected,
+                        "confidence": max_conf,
+                        "detected_class": detected_class,
+                        "should_notify": should_notify,
+                        "telegram": telegram,
+                        "time": time.strftime("%H:%M:%S"),
+                        "user": active_user
+                    }
+
                 filename = f"{SCREENSHOT_DIR}/fire_{int(time.time())}.jpg"
                 cv2.imwrite(filename, frame)
                 
@@ -291,8 +336,8 @@ async def detect(file: UploadFile = File(...)):
                 )
                 
                 try:
-                    msg_ok = send_message(message)
-                    photo_ok = send_photo(filename)
+                    msg_ok = send_message(message, chat_id=chat_id)
+                    photo_ok = send_photo(filename, chat_id=chat_id)
                     telegram = {
                         "status": "sent" if (msg_ok and photo_ok) else ("partial" if (msg_ok or photo_ok) else "error"),
                         "message": bool(msg_ok),
