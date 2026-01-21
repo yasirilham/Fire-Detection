@@ -1,5 +1,7 @@
 # Fire Detection System
 
+Link Dataset: https://universe.roboflow.com/fire-and-smoke-detection-yolo/fire-and-smoke-detection-o4uhv/dataset/4
+
 Sistem deteksi api dan asap secara real-time menggunakan YOLOv8, motion detection, dan notifikasi Telegram.
 
 ![Status](https://img.shields.io/badge/status-production-green)
